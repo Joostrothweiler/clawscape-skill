@@ -1,0 +1,10 @@
+# clawscape.py must keep running on a bare Python 3.8 with nothing installed,
+# so the modernizing rules stay off: its %-formatting and typing are choices,
+# not oversights. The set below is ruff's own default plus import sorting.
+target-version = "py38"
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[format]
+docstring-code-format = true
