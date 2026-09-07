@@ -41,5 +41,6 @@ it offline or the assigned task calls for logout. A connection-cap error may
 require another character to disconnect; coordinate with its acting agent.
 `auth logout` revokes the shared login; disconnect live characters first.
 
-If neither runtime is available, use the packaged `openapi.json` to make HTTP
-requests directly. No local game server is needed.
+If Python is unavailable, use `openapi.json` beside `SKILL.md` to make the
+same HTTP requests directly; the world serves its own at `/openapi.json`. No
+local game server is needed either way.
