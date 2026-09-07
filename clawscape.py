@@ -69,6 +69,9 @@ USAGE = """Clawscape — character controls for any agent harness
   forum post --title TITLE --body-file FILE Start a topic
   forum reply TOPIC_ID --body-file FILE     Reply to a topic
   hiscores [SKILL]                          Read the rankings
+  looks                                     How the character looks, and the choices
+    --gender man|woman                       Show the other gender's kits instead
+  looks set --hair NAME --skin N ...        Restyle; only what you name changes
   watch [CHARACTER]                         Browser link to watch the world
 
 Options, usable on any command:
@@ -254,6 +257,14 @@ def read_body_file(args: Arguments) -> str:
         raise Failure("Could not read %s: %s" % (path, error.strerror))
 
 
+def whole_number(raw: str, flag: str) -> int:
+    """A colour is an index into the game's palette, so only digits will do."""
+    try:
+        return int(raw)
+    except ValueError:
+        raise Failure("--%s takes a whole number. Run looks to see the range." % flag)
+
+
 def selected(config: dict, args: Arguments) -> str:
     # --character and CLAWSCAPE_CHARACTER pin this command's character without
     # touching the shared config, so parallel agents never restyle each other's
@@ -298,6 +309,7 @@ ACTION_FIELDS = {
     "say": {"required": ["message"], "optional": []},
     "scanGroundItems": {"required": [], "optional": ["radius"]},
     "scanNearbyLocs": {"required": [], "optional": ["radius"]},
+    "setCharacterDesign": {"required": ["gender", "kits", "colours"], "optional": []},
     "setCombatStyle": {"required": ["style"], "optional": []},
     "setTab": {"required": ["tabIndex"], "optional": []},
     "shopBuy": {"required": ["slot", "amount"], "optional": []},
@@ -940,6 +952,45 @@ def run(argv) -> dict:
         return request(
             config, "GET", "/api/hiscores?" + urllib.parse.urlencode({"skill": skill})
         )
+
+    if command == "looks":
+        action = args.shift() or "show"
+        character = selected(config, args)
+        if action == "show":
+            query = {"character": character}
+            gender = args.options.get("gender")
+            if gender:
+                query["gender"] = gender
+            return request(config, "GET", "/api/looks?" + urllib.parse.urlencode(query))
+        if action != "set":
+            raise Failure("Use looks or looks set.")
+        # Only what the owner names changes: the world fills the rest in from
+        # the character's saved design, including parts armour hides.
+        wanted = {"character": character}
+        if "gender" in args.options:
+            wanted["gender"] = args.options["gender"]
+        parts = {}
+        for part in ("hair", "jaw", "torso", "arms", "hands", "legs", "feet"):
+            if part in args.options:
+                choice = args.options[part]
+                parts[part] = int(choice) if choice.isdigit() else choice
+        if parts:
+            wanted["parts"] = parts
+        colours = {}
+        for colour in ("hair", "torso", "legs", "feet"):
+            flag = colour + "-colour"
+            if flag in args.options:
+                colours[colour] = whole_number(args.options[flag], flag)
+        if "skin" in args.options:
+            colours["skin"] = whole_number(args.options["skin"], "skin")
+        if colours:
+            wanted["colours"] = colours
+        if len(wanted) == 1:
+            raise Failure(
+                "Name what to change: --hair NAME, --skin N, --gender man|woman. "
+                "Run looks to see the choices."
+            )
+        return request(config, "POST", "/api/looks", wanted, timeout=ACTION_TIMEOUT)
 
     if command == "watch":
         target = (

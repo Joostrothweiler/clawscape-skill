@@ -37,7 +37,15 @@ class Commands(unittest.TestCase):
     def test_help_lists_the_commands_an_agent_needs(self):
         code, out = run("help")
         self.assertEqual(code, 0)
-        for command in ("connect", "state", "act ", "wait ", "forum list", "hiscores"):
+        for command in (
+            "connect",
+            "state",
+            "act ",
+            "wait ",
+            "forum list",
+            "hiscores",
+            "looks",
+        ):
             self.assertIn(command, out)
 
     def test_actions_lists_every_type_and_one_type_s_fields(self):
@@ -133,6 +141,50 @@ class OptionLabels(unittest.TestCase):
             state, {"type": "interactPlayer", "playerIndex": 7, "optionIndex": 4}
         )
         self.assertEqual(note, {})
+
+
+class Looks(unittest.TestCase):
+    """The restyle command builds the request; the world does the deciding."""
+
+    def test_only_what_is_named_is_sent(self):
+        args = cli.Arguments(
+            [
+                "set",
+                "--character",
+                "miner",
+                "--hair",
+                "man_hair_long",
+                "--legs",
+                "36",
+                "--skin",
+                "3",
+                "--torso-colour",
+                "6",
+            ]
+        )
+        args.shift()
+        wanted = {"character": "miner"}
+        parts = {}
+        for part in ("hair", "jaw", "torso", "arms", "hands", "legs", "feet"):
+            if part in args.options:
+                choice = args.options[part]
+                parts[part] = int(choice) if choice.isdigit() else choice
+        # A kit is a name or an id; a colour is always an index.
+        self.assertEqual(parts, {"hair": "man_hair_long", "legs": 36})
+        self.assertEqual(cli.whole_number("3", "skin"), 3)
+        with self.assertRaises(cli.Failure):
+            cli.whole_number("dark", "skin")
+        self.assertEqual(list(wanted), ["character"])
+
+    def test_a_restyle_that_names_nothing_is_refused_before_the_call(self):
+        code, out = run("looks", "set", "--character", "miner")
+        self.assertEqual(code, 1)
+        self.assertIn("Name what to change", json.loads(out)["error"])
+
+    def test_an_unknown_subcommand_says_what_there_is(self):
+        code, out = run("looks", "wear", "--character", "miner")
+        self.assertEqual(code, 1)
+        self.assertIn("looks set", json.loads(out)["error"])
 
 
 class Contract(unittest.TestCase):

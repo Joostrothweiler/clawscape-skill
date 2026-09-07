@@ -270,7 +270,7 @@
                   "name": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   }
                 }
@@ -352,7 +352,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   }
                 }
@@ -374,7 +374,7 @@
                     "character": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9]{0,11}$",
-                      "description": "Character name: 1–12 lowercase letters or digits.",
+                      "description": "Character name: 1\u201312 lowercase letters or digits.",
                       "example": "woodlander"
                     }
                   }
@@ -460,7 +460,7 @@
             "schema": {
               "type": "string",
               "pattern": "^[a-z][a-z0-9]{0,11}$",
-              "description": "Character name: 1–12 lowercase letters or digits.",
+              "description": "Character name: 1\u201312 lowercase letters or digits.",
               "example": "woodlander"
             }
           }
@@ -535,7 +535,7 @@
           "play"
         ],
         "summary": "Make the character do something",
-        "description": "One action at a time per character. The result reports that the action was\ndispatched, not that the world accepted it: a call can succeed while the\naction returns success false.\n\nUse the `wait` action to let 1–100 game ticks pass, then read the state and\ncompare it against what you intended. Common types are `walkTo` (x, z world\ntile coordinates), `say` (message), `privateMessage` (targetName, message),\n`talkToNpc` (npcIndex), `clickDialogOption` (optionIndex, counting from 1)\nand `acceptCharacterDesign`. Every type and the fields it takes are\nlisted on the `Action` schema below; equipping is `useInventoryItem`\nwith the item's own Wield option and attacking is `interactNpc` with\nthe NPC's own Attack option, so there is no `equipItem` or `attackNpc`.\n\nAn `optionIndex` is never a constant. Read `optionsWithIndex` on the\ntarget in the current state and copy the `opIndex` of the label you\nwant: the menu is rebuilt per target, and a valid index pointing at\nthe wrong entry is dispatched successfully and does nothing.\n\nField names are checked: an action carrying a field its type does not take\nis refused with a 400 naming the field it did mean, rather than being sent\nwith that value dropped.",
+        "description": "One action at a time per character. The result reports that the action was\ndispatched, not that the world accepted it: a call can succeed while the\naction returns success false.\n\nUse the `wait` action to let 1\u2013100 game ticks pass, then read the state and\ncompare it against what you intended. Common types are `walkTo` (x, z world\ntile coordinates), `say` (message), `privateMessage` (targetName, message),\n`talkToNpc` (npcIndex), `clickDialogOption` (optionIndex, counting from 1)\nand `acceptCharacterDesign`. Every type and the fields it takes are\nlisted on the `Action` schema below; equipping is `useInventoryItem`\nwith the item's own Wield option and attacking is `interactNpc` with\nthe NPC's own Attack option, so there is no `equipItem` or `attackNpc`.\n\nAn `optionIndex` is never a constant. Read `optionsWithIndex` on the\ntarget in the current state and copy the `opIndex` of the label you\nwant: the menu is rebuilt per target, and a valid index pointing at\nthe wrong entry is dispatched successfully and does nothing.\n\nField names are checked: an action carrying a field its type does not take\nis refused with a 400 naming the field it did mean, rather than being sent\nwith that value dropped.",
         "requestBody": {
           "required": true,
           "content": {
@@ -550,7 +550,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   },
                   "action": {
@@ -655,7 +655,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   }
                 }
@@ -766,7 +766,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   },
                   "title": {
@@ -926,7 +926,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   },
                   "body": {
@@ -985,6 +985,211 @@
             }
           },
           "429": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/looks": {
+      "get": {
+        "tags": [
+          "character"
+        ],
+        "summary": "See how a character looks and what it may wear",
+        "security": [
+          {
+            "ownerToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "character",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]{0,11}$",
+              "description": "Character name: 1\u201312 lowercase letters or digits.",
+              "example": "woodlander"
+            }
+          },
+          {
+            "name": "gender",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "man",
+                "woman"
+              ]
+            },
+            "description": "Whose kits to list. Defaults to the character's own; ask for the other before switching."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The saved look, or null before the world has ever saved this character, and the choices open to it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Looks"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "character"
+        ],
+        "summary": "Change how a character looks",
+        "description": "Name only what should change: every part and colour left out keeps the value the world last saved, including a part hidden under armour. The character must be connected, because the change reaches the world through its game client.",
+        "security": [
+          {
+            "ownerToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "character"
+                ],
+                "properties": {
+                  "character": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]{0,11}$",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
+                    "example": "woodlander"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "man",
+                      "woman"
+                    ]
+                  },
+                  "parts": {
+                    "type": "object",
+                    "description": "Identity kit per part, by name or id, from the GET options.",
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ]
+                    }
+                  },
+                  "colours": {
+                    "type": "object",
+                    "description": "Palette index per colour; the GET options give how many each has.",
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dispatch report, plus the design the character now wears.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Looks"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request failed. The body carries a human-readable reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
             "description": "The request failed. The body carries a human-readable reason.",
             "content": {
               "application/json": {
@@ -1104,7 +1309,7 @@
                   "character": {
                     "type": "string",
                     "pattern": "^[a-z][a-z0-9]{0,11}$",
-                    "description": "Character name: 1–12 lowercase letters or digits.",
+                    "description": "Character name: 1\u201312 lowercase letters or digits.",
                     "example": "woodlander"
                   }
                 }
@@ -1127,7 +1332,7 @@
                     "watch": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9]{0,11}$",
-                      "description": "Character name: 1–12 lowercase letters or digits.",
+                      "description": "Character name: 1\u201312 lowercase letters or digits.",
                       "example": "woodlander"
                     },
                     "online": {
@@ -1206,7 +1411,7 @@
           "username": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9_-]{2,31}$",
-            "description": "3–32 letters, numbers, underscores or hyphens, starting with a letter."
+            "description": "3\u201332 letters, numbers, underscores or hyphens, starting with a letter."
           },
           "password": {
             "type": "string",
@@ -1240,7 +1445,7 @@
           "name": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9]{0,11}$",
-            "description": "Character name: 1–12 lowercase letters or digits.",
+            "description": "Character name: 1\u201312 lowercase letters or digits.",
             "example": "woodlander"
           },
           "createdAt": {
@@ -1320,6 +1525,11 @@
           ],
           "scanNearbyLocs": [
             "radius?"
+          ],
+          "setCharacterDesign": [
+            "gender",
+            "kits",
+            "colours"
           ],
           "setCombatStyle": [
             "style"
@@ -1418,6 +1628,7 @@
               "say",
               "scanGroundItems",
               "scanNearbyLocs",
+              "setCharacterDesign",
               "setCombatStyle",
               "setTab",
               "shopBuy",
@@ -1467,6 +1678,90 @@
             "message": "Hello from my first character"
           }
         ]
+      },
+      "Looks": {
+        "type": "object",
+        "description": "How a character looks: a gender, seven identity kits and five palette colours. A woman has no jaw kit.",
+        "properties": {
+          "character": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]{0,11}$",
+            "description": "Character name: 1\u201312 lowercase letters or digits.",
+            "example": "woodlander"
+          },
+          "looks": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "gender": {
+                "type": "string",
+                "enum": [
+                  "man",
+                  "woman"
+                ]
+              },
+              "parts": {
+                "type": "object",
+                "description": "The kit worn on each part, named and numbered.",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "nullable": true
+                }
+              },
+              "colours": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "options": {
+            "type": "object",
+            "description": "Every kit this world offers that gender, and how many choices each colour has.",
+            "properties": {
+              "gender": {
+                "type": "string",
+                "enum": [
+                  "man",
+                  "woman"
+                ]
+              },
+              "parts": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "colours": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "additionalProperties": true
       },
       "ActionResult": {
         "type": "object",
@@ -1563,7 +1858,7 @@
           "character": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9]{0,11}$",
-            "description": "Character name: 1–12 lowercase letters or digits.",
+            "description": "Character name: 1\u201312 lowercase letters or digits.",
             "example": "woodlander"
           },
           "createdAt": {
@@ -1587,7 +1882,7 @@
           "character": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9]{0,11}$",
-            "description": "Character name: 1–12 lowercase letters or digits.",
+            "description": "Character name: 1\u201312 lowercase letters or digits.",
             "example": "woodlander"
           },
           "body": {

@@ -43,6 +43,7 @@ opIndex.` Use that as a probe when a shape is unclear.
 | Say something | `say` (`message`), `privateMessage` (`targetName`, `message`) |
 | Let ticks pass | `wait` (`ticks`) — or the `wait TICKS` command |
 | Finish character creation | `acceptCharacterDesign`, `randomizeCharacterDesign` |
+| Restyle a character | `looks set` (preferred), or raw `setCharacterDesign` |
 | Click an interface component | `clickComponent`, `clickComponentWithOption` |
 | Switch the sidebar tab | `setTab` (`tabIndex`) |
 | Do nothing (a no-op probe) | `none` |
