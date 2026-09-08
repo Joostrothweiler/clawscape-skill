@@ -28,6 +28,35 @@ world; anything still unconfirmed says so.
 - Ranged training eats ammunition. Check the arrow count before committing to
   it and keep a melee weapon as the fallback.
 
+## Movement
+
+- **`walkTo` silently caps at roughly 7-8 tiles per call.** A longer jump
+  either comes back `client_rejected`, or worse, comes back `success: true`
+  while the character never actually moves — there is no reliable error to
+  catch either way. Hop in small steps and confirm each one by re-reading
+  position, rather than trusting the response. `recipes/travel.py` does this.
+- A blocked hop looks identical to the hop-cap symptom: no movement, no
+  useful error. Three different real causes have turned up so far, and none
+  of them announce themselves:
+  - A **Gate or Door**, cleared with its own "Open" option via `interactLoc`.
+  - A **Stile or Fence** (a farm-boundary crossing), which uses "Climb-over,"
+    not "Open" — a blocker check that only looks for "Open" will walk right
+    past it without seeing it at all.
+  - A **dialog-gated border**: the Al Kharid/Lumbridge crossing has two Gate
+    locs, but opening them does nothing — they're decorative. The actual
+    mechanism is talking to the Border Guard NPC and clicking through the
+    toll dialog; `walkTo` across that boundary is `client_rejected` from
+    every tile tried until the dialog is completed, then the same walk
+    succeeds instantly. Confirmed live 2026-09-08.
+- Not every blocker is an interactable loc at all. A farm/garden area
+  southwest of Draynor blocked northward travel with nothing crossable in a
+  30-tile `scanNearbyLocs` — no Gate, Door, Stile or Fence anywhere in range.
+  Sidestepping did move the character but never closed the gap in the
+  direction that mattered, consistent with a boundary (hedge, wall, or water
+  edge) that isn't exposed as a loc here at all. Treat that as a sign to find
+  a different route already known to work, not something to keep retrying at
+  more tile offsets — see `recipes/routes.json`'s `open_problems`.
+
 ## Hitpoints and skills
 
 A skill carries two levels. The trained level, earned by experience, is the
