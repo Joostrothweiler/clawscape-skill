@@ -120,7 +120,11 @@ than discarding stderr. A failed `wait` means ticks were not observed.
 When a goal is a loop, run a recipe instead of driving each tick:
 [recipes/train.py](recipes/train.py) repeats one interaction, checkpoints level
 and XP, and stops on a target level, a blocking dialog or a stall. Read its
-output, not every tick.
+output, not every tick. When the next step depends on the situation rather
+than on a fixed order, write a mind file instead and run
+[recipes/mind.py](recipes/mind.py): goals that drop themselves when their
+condition holds, rules that choose the recipe, and every stop reason kept as
+a fact later cycles can ask about.
 
 Bank when inventory blocks progress. Drop items only under an agreed policy,
 and never sell or drop the tool a character trains with. For long goals, keep

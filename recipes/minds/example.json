@@ -1,0 +1,60 @@
+{
+  "goals": [
+    {
+      "name": "attack_20",
+      "satisfied": "level('Attack') >= 20",
+      "note": "Nothing tells the run it is finished. This condition is re-read every cycle, and the run ends the cycle it holds."
+    }
+  ],
+  "rules": [
+    {
+      "name": "retreat_after_a_beating",
+      "when": "failed_recently('train', 'low_hp', 900) and not at(3230, 3295, 12)",
+      "then": {
+        "recipe": "travel",
+        "argv": ["--x", "3230", "--z", "3295", "--min-hp", "2"]
+      },
+      "note": "The stop reason from the last fight is a fact, so this reads it. A plan that is a list can only retry the fight that caused it."
+    },
+    {
+      "name": "train_on_something_that_cannot_hurt_back",
+      "when": "failed_recently('train', 'low_hp', 900)",
+      "then": {
+        "recipe": "train",
+        "argv": [
+          "--npc", "chicken",
+          "--option", "Attack",
+          "--skill", "Attack",
+          "--target-level", "20",
+          "--min-hp", "2",
+          "--max-rounds", "30"
+        ]
+      },
+      "note": "HP comes back over real time, not over retries. Fifteen minutes on chickens is how that time gets spent; the cooldown is the condition above, not a special case in the runner."
+    },
+    {
+      "name": "walk_to_the_goblins",
+      "when": "npc_near('goblin') == 0 and known('lumbridge_courtyard')",
+      "then": {
+        "recipe": "travel",
+        "argv": ["--landmark", "lumbridge_courtyard", "--min-hp", "6"]
+      },
+      "note": "known() asks routes.json, so a landmark nobody has confirmed yet cannot send a character walking at a guess."
+    },
+    {
+      "name": "fight_the_goblins",
+      "when": "",
+      "then": {
+        "recipe": "train",
+        "argv": [
+          "--npc", "goblin",
+          "--option", "Attack",
+          "--skill", "Attack",
+          "--target-level", "20",
+          "--min-hp", "8"
+        ]
+      },
+      "note": "An empty condition always matches. Last in the file, it is the catch-all; anywhere else it would shadow everything under it."
+    }
+  ]
+}

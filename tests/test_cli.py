@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -10,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -652,6 +655,407 @@ class Recipes(unittest.TestCase):
         with self.assertRaises(train.Stop) as caught:
             train.pick_target(state, args)
         self.assertEqual(caught.exception.reason, "no_target")
+
+
+class Minds(unittest.TestCase):
+    """mind.py: goals that drop themselves, rules that read the situation."""
+
+    def setUp(self):
+        self.mind = load("mind", "recipes/mind.py")
+        self.home = tempfile.mkdtemp()
+        self.memory = os.path.join(self.home, "memory.jsonl")
+
+    def tearDown(self):
+        shutil.rmtree(self.home, ignore_errors=True)
+
+    def beliefs(self, state, facts=None, routes=None, now=1000.0):
+        return self.mind.Beliefs(state, facts or [], routes or {}, now)
+
+    def world(self, **extra):
+        state = {
+            "player": {"hp": 10, "maxHp": 20, "worldX": 3222, "worldZ": 3218},
+            "skills": [
+                {"name": "Attack", "baseLevel": 12, "level": 14, "experience": 1500}
+            ],
+            "inventory": [{"id": 558, "name": "Mind rune", "count": 30}],
+        }
+        state.update(extra)
+        return state
+
+    def test_a_renamed_state_section_is_an_error_not_an_empty_answer(self):
+        # groundItems read as "ground" returned nothing for a whole session
+        # while every recipe reported success. A belief that cannot be read
+        # has to say so.
+        beliefs = self.beliefs(self.world(ground=[{"name": "Bones"}]))
+        with self.assertRaises(self.mind.Stop) as caught:
+            beliefs.ground_near("bones")
+        self.assertEqual(caught.exception.reason, "state_schema")
+        self.assertIn("groundItems", caught.exception.detail)
+
+    def test_a_missing_required_section_fails_before_any_rule_runs(self):
+        state = self.world()
+        del state["skills"]
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.beliefs(state)
+        self.assertEqual(caught.exception.reason, "state_schema")
+
+    def test_a_level_is_the_trained_one_not_the_boosted_one(self):
+        # `level` is drained, boosted, or for Hitpoints current HP. A goal
+        # watching it is achieved by eating a fish.
+        self.assertEqual(self.beliefs(self.world()).level("attack"), 12)
+
+    def test_items_are_counted_by_id_or_by_name(self):
+        beliefs = self.beliefs(self.world())
+        self.assertEqual(beliefs.have(558), 30)
+        self.assertEqual(beliefs.have("mind rune"), 30)
+        self.assertEqual(beliefs.have("law rune"), 0)
+
+    def test_a_stop_reason_becomes_a_fact_a_condition_can_read(self):
+        facts = [{"t": 900.0, "recipe": "train", "reason": "low_hp", "ok": False}]
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertTrue(beliefs.failed_recently("train", "low_hp", 900))
+        self.assertFalse(beliefs.failed_recently("train", "low_hp", 50))
+        self.assertFalse(beliefs.failed_recently("travel", "low_hp", 900))
+        self.assertEqual(beliefs.since("train", "low_hp"), 100.0)
+        self.assertEqual(beliefs.since("travel"), float("inf"))
+
+    def test_a_success_is_not_a_failure(self):
+        facts = [
+            {"t": 990.0, "recipe": "train", "reason": "target_reached", "ok": True}
+        ]
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertFalse(beliefs.failed_recently("train"))
+        self.assertTrue(beliefs.succeeded_recently("train"))
+
+    def test_a_goal_drops_itself_the_cycle_its_condition_holds(self):
+        namespace = self.beliefs(self.world()).namespace()
+        goals = [
+            {"name": "attack_20", "satisfied": "level('Attack') >= 20"},
+            {"name": "attack_10", "satisfied": "level('Attack') >= 10"},
+        ]
+        still_open, achieved = self.mind.open_goals(goals, namespace)
+        self.assertEqual(still_open, ["attack_20"])
+        self.assertEqual(achieved, ["attack_10"])
+
+    def test_the_first_matching_rule_wins_and_an_empty_when_is_the_catch_all(self):
+        namespace = self.beliefs(self.world()).namespace()
+        rules = [
+            {"name": "hurt", "when": "hp_ratio < 0.2"},
+            {"name": "rich", "when": "have(558) >= 10"},
+            {"name": "anything", "when": ""},
+        ]
+        rule, considered = self.mind.select(rules, namespace, True)
+        self.assertEqual(rule["name"], "rich")
+        self.assertEqual([row["matched"] for row in considered], [False, True])
+
+    def test_a_gap_in_the_rules_is_reported_rather_than_papered_over(self):
+        namespace = self.beliefs(self.world()).namespace()
+        rule, _ = self.mind.select(
+            [{"name": "never", "when": "hp > 100"}], namespace, False
+        )
+        self.assertIsNone(rule)
+
+    def test_a_broken_condition_names_the_rule_it_came_from(self):
+        namespace = self.beliefs(self.world()).namespace()
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.evaluate("have(", namespace, "rule 'oops'")
+        self.assertEqual(caught.exception.reason, "bad_expression")
+        self.assertIn("oops", caught.exception.detail)
+
+    def test_a_condition_cannot_reach_past_the_beliefs(self):
+        namespace = self.beliefs(self.world()).namespace()
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.evaluate("open('/etc/passwd')", namespace, "rule 'bad'")
+        self.assertEqual(caught.exception.reason, "bad_expression")
+
+    def write_mind(self, mind: dict) -> str:
+        path = os.path.join(self.home, "mind.json")
+        with open(path, "w") as handle:
+            json.dump(mind, handle)
+        return path
+
+    def test_the_shipped_example_mind_loads(self):
+        mind = self.mind.load_mind(os.path.join(ROOT, "recipes/minds/example.json"))
+        self.assertTrue(mind["goals"])
+        self.assertEqual(mind["rules"][-1]["when"], "")
+
+    def test_every_condition_in_the_example_is_one_the_beliefs_can_answer(self):
+        # A typo in a condition is invisible until the cycle that needs it,
+        # which on a --loop run is hours in. Ask them all here instead.
+        mind = self.mind.load_mind(os.path.join(ROOT, "recipes/minds/example.json"))
+        state = self.world(
+            nearbyNpcs=[], nearbyLocs=[], nearbyPlayers=[], groundItems=[], dialog=None
+        )
+        namespace = self.beliefs(state).namespace()
+        namespace["goals"] = []
+        namespace["goal"] = lambda name: False
+        for goal in mind["goals"]:
+            self.mind.evaluate(goal["satisfied"], namespace, goal["name"])
+        for rule in mind["rules"]:
+            self.mind.evaluate(rule["when"] or "True", namespace, rule["name"])
+
+    def test_a_rule_naming_no_recipe_is_refused_before_the_character_moves(self):
+        for then, reason in (
+            ({"recipe": "../../clawscape"}, "bad_mind"),
+            ({"recipe": "nonesuch"}, "unknown_recipe"),
+            ({"recipe": "train", "argv": ["--character", "someone_else"]}, "bad_mind"),
+        ):
+            path = self.write_mind({"rules": [{"name": "r", "when": "", "then": then}]})
+            with self.assertRaises(self.mind.Stop) as caught:
+                self.mind.load_mind(path)
+            self.assertEqual(caught.exception.reason, reason)
+
+    def test_a_rule_with_no_when_at_all_is_refused(self):
+        # "" is a catch-all someone chose; a missing key is one nobody did.
+        path = self.write_mind({"rules": [{"name": "r", "then": {"recipe": "train"}}]})
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.load_mind(path)
+        self.assertEqual(caught.exception.reason, "bad_mind")
+
+    def test_a_goal_with_no_condition_could_never_be_dropped(self):
+        path = self.write_mind(
+            {
+                "goals": [{"name": "forever"}],
+                "rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}],
+            }
+        )
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.load_mind(path)
+        self.assertEqual(caught.exception.reason, "bad_mind")
+
+    def run_mind(self, mind: dict, state: dict, *extra: str):
+        """One cycle against a fixed world, dispatching nothing."""
+        path = self.write_mind(mind)
+        self.mind.read_state = lambda character: state
+        args = self.mind.parse(
+            [
+                "--character",
+                "demo",
+                "--mind",
+                path,
+                "--memory",
+                self.memory,
+                "--routes",
+                os.path.join(self.home, "routes.json"),
+                *extra,
+            ]
+        )
+        lines = []
+        self.mind.emit = lambda row: lines.append(row)
+        return self.mind.run(args), lines
+
+    def test_a_run_whose_goals_all_hold_is_over_before_it_acts(self):
+        outcome, lines = self.run_mind(
+            {
+                "goals": [{"name": "attack_10", "satisfied": "level('Attack') >= 10"}],
+                "rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}],
+            },
+            self.world(),
+        )
+        self.assertEqual(outcome[0], "goals_achieved")
+        self.assertEqual(lines[0]["achieved"], ["attack_10"])
+        self.assertFalse(os.path.exists(self.memory))
+
+    def test_a_rule_may_ask_which_goals_are_still_open(self):
+        outcome, lines = self.run_mind(
+            {
+                "goals": [
+                    {"name": "attack_20", "satisfied": "level('Attack') >= 20"},
+                    {"name": "attack_10", "satisfied": "level('Attack') >= 10"},
+                ],
+                "rules": [
+                    {
+                        "name": "done_already",
+                        "when": "goal('attack_10')",
+                        "then": {"recipe": "travel"},
+                    },
+                    {
+                        "name": "still_to_do",
+                        "when": "goal('attack_20')",
+                        "then": {"recipe": "train"},
+                    },
+                ],
+            },
+            self.world(),
+            "--dry-run",
+        )
+        self.assertEqual(outcome[0], "dry_run")
+        self.assertEqual(lines[-1]["chose"], "still_to_do")
+
+    def test_a_dead_character_stops_the_run_before_a_rule_is_chosen(self):
+        state = self.world()
+        state["player"]["isDead"] = True
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.run_mind(
+                {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+                state,
+            )
+        self.assertEqual(caught.exception.reason, "died")
+
+    def test_a_landmark_nobody_confirmed_is_not_known(self):
+        routes = {"landmarks": {"lumbridge_courtyard": [3222, 3218]}}
+        beliefs = self.beliefs(self.world(), routes=routes)
+        self.assertTrue(beliefs.known("lumbridge_courtyard"))
+        self.assertFalse(beliefs.known("aubury_rune_shop"))
+
+    def fake_recipe(self, body: str) -> None:
+        """A recipe beside a temporary HERE, so dispatch can be run for real."""
+        self.mind.HERE = self.home
+        with open(os.path.join(self.home, "fake.py"), "w") as handle:
+            handle.write("import sys\n" + body)
+
+    def dispatch(self, argv=None):
+        """run_recipe with its forwarded output captured."""
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            result = self.mind.run_recipe(
+                "demo", {"recipe": "fake", "argv": argv or []}
+            )
+        return result, stdout.getvalue()
+
+    def test_a_recipe_s_own_lines_are_forwarded_and_its_last_done_is_the_outcome(self):
+        self.fake_recipe(
+            "print('{\"round\": 1}')\n"
+            'print(\'{"done": "target_reached", "detail": "level 20"}\')\n'
+            "print(' ')\n"
+            "sys.exit(0)\n"
+        )
+        (reason, detail, code), forwarded = self.dispatch()
+        self.assertEqual((reason, detail, code), ("target_reached", "level 20", 0))
+        self.assertIn('{"round": 1}', forwarded)
+        self.assertEqual(len(forwarded.strip().splitlines()), 2)
+
+    def test_the_flags_a_rule_names_reach_the_recipe_with_the_character_added(self):
+        self.fake_recipe(
+            'print(\'{"done": "%s"}\' % " ".join(sys.argv[1:]))\nsys.exit(0)\n'
+        )
+        (reason, _, _), _ = self.dispatch(["--npc", "goblin"])
+        self.assertEqual(reason, "--npc goblin --character demo")
+
+    def test_a_recipe_that_dies_without_a_done_line_still_reports_something(self):
+        self.fake_recipe('sys.stderr.write("Traceback: boom\\n")\nsys.exit(1)\n')
+        (reason, detail, code), _ = self.dispatch()
+        self.assertEqual(reason, "no_outcome")
+        self.assertEqual(code, 1)
+        self.assertIn("boom", detail)
+
+    def test_a_recipe_that_floods_stderr_does_not_deadlock_the_run(self):
+        # Draining stdout to the end while stderr fills its own pipe buffer
+        # hangs both processes, and a --loop run failing that way hangs
+        # silently. The thread here turns a regression into a failure rather
+        # than a suite that never finishes.
+        self.fake_recipe(
+            'sys.stderr.write("x" * 400000)\n'
+            'print(\'{"done": "target_reached"}\')\n'
+            "sys.exit(0)\n"
+        )
+        result = []
+        worker = threading.Thread(target=lambda: result.append(self.dispatch()))
+        worker.daemon = True
+        worker.start()
+        worker.join(60)
+        self.assertFalse(worker.is_alive(), "run_recipe deadlocked on a full stderr")
+        self.assertEqual(result[0][0][0], "target_reached")
+
+    def test_an_outcome_written_this_cycle_is_a_fact_the_next_one_reads(self):
+        self.mind.record_fact(
+            self.memory,
+            {
+                "t": 950.0,
+                "character": "demo",
+                "recipe": "train",
+                "reason": "low_hp",
+                "ok": False,
+            },
+        )
+        self.mind.record_fact(
+            self.memory,
+            {
+                "t": 999.0,
+                "character": "someone_else",
+                "recipe": "train",
+                "reason": "low_hp",
+                "ok": False,
+            },
+        )
+        facts = self.mind.load_facts(self.memory, "demo")
+        self.assertEqual(len(facts), 1)
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertTrue(beliefs.failed_recently("train", "low_hp", 100))
+
+    def test_a_memory_file_with_a_torn_line_still_reads_the_rest(self):
+        with open(self.memory, "w") as handle:
+            handle.write('{"t": 1, "character": "demo", "reason": "a"}\n')
+            handle.write("{not json\n\n")
+            handle.write('{"t": 2, "character": "demo", "reason": "b"}\n')
+        self.assertEqual(len(self.mind.load_facts(self.memory, "demo")), 2)
+
+    def looping_mind(self, outcome, *extra: str):
+        """A --loop run whose every cycle dispatches to a fixed outcome."""
+        self.mind.run_recipe = lambda character, call: outcome
+        return self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+            "--loop",
+            *extra,
+        )
+
+    def test_the_same_outcome_over_and_over_is_a_stall_not_a_routine(self):
+        # A character alternating two ordinary-looking stops ran 267 cycles
+        # doing nothing; each round on its own looked fine.
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.looping_mind(("no_target", "nothing in range", 2), "--patience", "3")
+        self.assertEqual(caught.exception.reason, "stalled")
+        self.assertIn("3 cycles", caught.exception.detail)
+        self.assertEqual(len(self.mind.load_facts(self.memory, "demo")), 3)
+
+    def test_a_loop_stops_at_max_cycles_when_nothing_else_stops_it(self):
+        outcomes = [("a", "", 0), ("b", "", 0), ("c", "", 0)]
+        self.mind.run_recipe = lambda character, call: outcomes.pop(0)
+        (outcome, _, code), _ = self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+            "--loop",
+            "--max-cycles",
+            "3",
+        )
+        self.assertEqual((outcome, code), ("max_cycles", 2))
+        self.assertEqual(outcomes, [])
+
+    def test_a_stop_file_ends_a_loop_gracefully(self):
+        stop = os.path.join(self.home, "stop")
+        with open(stop, "w") as handle:
+            handle.write("")
+        (outcome, _, code), lines = self.looping_mind(("a", "", 0), "--stop-file", stop)
+        self.assertEqual((outcome, code), ("stop_file", 0))
+        self.assertEqual(lines, [])
+
+    def test_a_step_reporting_death_halts_the_run_it_does_not_retry(self):
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.looping_mind(("died", "lost the lot", 2))
+        self.assertEqual(caught.exception.reason, "died")
+
+    def test_a_single_cycle_exits_with_the_recipe_s_own_status(self):
+        self.mind.run_recipe = lambda character, call: ("out_of_runes", "", 2)
+        (outcome, _, code), _ = self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+        )
+        self.assertEqual((outcome, code), ("out_of_runes", 2))
+
+    def test_a_mind_file_needs_a_character_like_every_other_recipe(self):
+        done = subprocess.run(
+            [
+                sys.executable,
+                os.path.join(ROOT, "recipes/mind.py"),
+                "--character",
+                "demo",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("--mind", done.stderr)
 
 
 if __name__ == "__main__":
