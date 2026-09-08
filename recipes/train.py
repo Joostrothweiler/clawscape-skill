@@ -126,12 +126,17 @@ def clear_continuation(character: str, state: dict) -> bool:
     A level-up page is the common case: it opens on its own mid-grind and
     freezes combat and experience until something clicks it away. A dialog
     with real choices is a decision, so the loop hands it back instead.
+
+    A level-up page reports one option ("Click here to continue"), not zero,
+    so a single-option page is a continuation too -- reading any option list
+    as a decision stopped every grind at its first level-up, the one dialog
+    this exists to clear. Only two or more options is a real choice.
     """
     dialog = state.get("dialog") or {}
     if not dialog.get("isOpen"):
         return False
     options = dialog.get("options") or []
-    if options:
+    if len(options) > 1:
         raise Stop("dialog_choice", json.dumps(options)[:400])
     act(character, "clickDialogOption", {"optionIndex": 0})
     return True
