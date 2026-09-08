@@ -7,16 +7,28 @@ character never actually moves -- there is no reliable error to catch either
 way. A Gate, Door or Stile blocking the path looks identical: the same
 no-movement symptom, indistinguishable from the hop cap unless something
 already suspects an obstacle and goes looking for one. Driving this a tick at
-a time means paying for every hop in context and re-diagnosing the same two
+a time means paying for every hop in context and re-diagnosing the same
 problems by hand each trip.
 
 This runs the walk as a script instead: it always hops in small steps, and
-the moment a hop doesn't move the character, it looks for something to cross
-before retrying -- a Gate or Door ("Open"), a Stile or Fence ("Climb-over"),
-or a known dialog-gated border from --routes (see routes.json). If none of
-those apply it tries a short sidestep, since a boundary that blocks straight-
-line travel is often crossable a few tiles to either side even with no
-interactable loc marking the way through.
+the moment a hop stops making net progress toward the target, it looks for
+something to cross before retrying -- a Gate or Door ("Open"), a Stile or
+Fence ("Climb-over"), or a known dialog-gated border from --routes (see
+routes.json). If none of those apply it tries a short sidestep, since a
+boundary that blocks straight-line travel is often crossable a few tiles to
+either side even with no interactable loc marking the way through.
+
+"Net progress" is checked two ways, not just whether the last hop moved the
+character at all: the Chebyshev distance to the target must strictly improve
+on the best seen so far, and the landing tile must not repeat one already
+visited this trip. The first version of this recipe checked only "did the
+last walkTo change my position," and a known pathing quirk (some terrain
+pockets resolve `walkTo` to whichever of two reachable tiles is nearest,
+alternating depending on approach) made it bounce between two tiles for over
+20 rounds in live play, each one individually "successful," while getting no
+closer to the destination at all. Reporting a checkpoint every round is not
+the same as checking the checkpoints add up to progress -- confirm the trend,
+not just the latest sample, anywhere a loop like this claims to be working.
 
     uv run recipes/travel.py --character gorruk --x 3222 --z 3218
     uv run recipes/travel.py --character gorruk --landmark lumbridge_courtyard
@@ -142,6 +154,27 @@ def update_routes(path: str, mutate) -> None:
 
 def clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, value))
+
+
+def chebyshev(a: tuple, b: tuple) -> int:
+    return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
+
+
+def progress_check(new_pos, cur, target, best_dist, visited, cycle_window=6):
+    """Whether a hop counted as real progress, not just movement.
+
+    A hop that changes position but revisits a recently-seen tile, or that
+    moves without shrinking the distance to `target`, is not progress -- it
+    is exactly what a `walkTo` bouncing between two reachable tiles in a
+    fenced pocket looks like. Pulled out on its own so this rule is a single
+    tested fact instead of something re-verified by reading the loop.
+
+    Returns (progressing, cycling, new_dist).
+    """
+    new_dist = chebyshev(new_pos, target)
+    cycling = new_pos in visited[-cycle_window:]
+    progressing = new_pos != cur and not cycling and new_dist < best_dist
+    return progressing, cycling, new_dist
 
 
 def find_loc_crossing(state: dict, near_x: int, near_z: int, radius: int):
@@ -277,6 +310,8 @@ def travel(args) -> str:
     hops = []
     obstacles = []
     stuck_streak = 0
+    best_dist = chebyshev(start, target)
+    visited = [start]
 
     for round_number in range(1, args.max_rounds + 1):
         guard(state, args)
@@ -297,17 +332,24 @@ def travel(args) -> str:
             if pos_of(state) != cur:
                 break
         new_pos = pos_of(state)
+        progressing, cycling, new_dist = progress_check(
+            new_pos, cur, target, best_dist, visited
+        )
         emit(
             {
                 "round": round_number,
                 "tick": state.get("tick"),
                 "pos": list(new_pos),
                 "hp": (state.get("player") or {}).get("hp"),
+                "progressing": progressing,
+                **({"note": "cycling"} if cycling else {}),
             }
         )
+        visited.append(new_pos)
 
-        if new_pos != cur:
+        if progressing:
             hops.append(new_pos)
+            best_dist = new_dist
             stuck_streak = 0
             continue
 
@@ -364,10 +406,27 @@ def travel(args) -> str:
                 )
                 crossed = True
 
+        # A crossing/sidestep "succeeding" means it moved the character, not
+        # that the trip is any closer to done -- run the same progress test
+        # on wherever it landed rather than treating movement itself as the
+        # win. Without this, a sidestep that just relocates within the same
+        # trapped pocket resets the give-up counter every round forever: live
+        # play burned all 40 rounds wandering a fenced garden this way, each
+        # round individually "resolved," with zero net progress across the
+        # whole trip. patience counts rounds without progress, not rounds
+        # without motion.
         if crossed:
-            stuck_streak = 0
             state = read_state(character)
-            continue
+            landed_pos = pos_of(state)
+            landed_progressing, landed_cycling, landed_dist = progress_check(
+                landed_pos, cur, target, best_dist, visited
+            )
+            visited.append(landed_pos)
+            if landed_progressing:
+                hops.append(landed_pos)
+                best_dist = landed_dist
+                stuck_streak = 0
+                continue
 
         stuck_streak += 1
         if stuck_streak >= args.patience:
@@ -375,8 +434,8 @@ def travel(args) -> str:
             raise Stop(
                 "stuck",
                 "no Gate/Door/Stile, no known --routes crossing, and no sidestep "
-                "opening within %d tiles of %s; logged to open_problems in %s"
-                % (args.probe_radius, cur, args.routes),
+                "opening within %d tiles of %s made real progress; logged to "
+                "open_problems in %s" % (args.probe_radius, cur, args.routes),
             )
 
     record(

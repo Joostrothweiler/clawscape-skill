@@ -55,11 +55,18 @@
       ]
     }
   ],
-  "confirmed_paths": [],
+  "confirmed_paths": [
+    {
+      "from": [3207, 3276],
+      "to": [3222, 3218],
+      "note": "Draynor-area farm back to Lumbridge courtyard. Clean, no obstacles.",
+      "timestamp": "2026-09-08T14:01:11Z"
+    }
+  ],
   "open_problems": [
     {
-      "area": "Draynor farm/garden, roughly x 3185-3212, z 3290-3320",
-      "note": "Dense cabbage/daisy/fern/plant garden reached heading north from the Al Kharid area. A 30-tile scanNearbyLocs came back with no Gate/Door/Stile/Fence anywhere in it. Locs north of roughly z=3310 report reachable:false while everything south reports reachable:true, which suggests the real blocker (a hedge, wall, or water edge) isn't exposed as an interactable loc at all here. Sidestepping east/west did move the character but never closed the gap north, since the blocking boundary appears to run the width of the area at a roughly constant z rather than being a single-point crossing. Logged 2026-09-08 rather than re-probed blind -- the working hypothesis is this approach (cutting north-west through Draynor's farm) isn't a real route at all, and the Lumbridge-Varrock road further east is the one to use instead.",
+      "area": "Draynor farm/garden, roughly x 3193-3225, z 3260-3320",
+      "note": "Corrects an earlier, wrong hypothesis logged here that this area had no Gate/Door/Stile/Fence in it at all -- it does; multiple Gates, a Door, and several Stiles were found and successfully crossed heading north from Al Kharid through here on 2026-09-08 (see the obstacle list this entry replaces, in git history). The actual problem: it's a maze of small farm plots, each individually crossable, that don't compose into a route north. Two separate live attempts, one over 30-odd hops and dozens of individual crossings, made real net progress for a while and then landed in a pocket (centered roughly on 3205-3210, 3286-3301) where every crossable loc and every sidestep only led to another already-visited tile inside the same pocket -- confirmed by recipes/travel.py's own progress test (Chebyshev distance to target, checked against the best seen this trip), not just a hunch. Working hypothesis, still unconfirmed: this farm was never meant as a through-route at all, and the real Lumbridge-Varrock road lies further east, outside this area entirely. Try approaching Varrock via the direct road from Lumbridge courtyard (see the lumbridge_courtyard landmark) without detouring through Al Kharid or Draynor first, rather than re-attempting a path through this pocket.",
       "logged": "2026-09-08"
     }
   ]
