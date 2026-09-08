@@ -102,7 +102,12 @@ def load_routes(path: str) -> dict:
     if os.path.exists(path):
         with open(path) as handle:
             return json.load(handle)
-    return {"landmarks": {}, "crossings": [], "confirmed_paths": [], "open_problems": []}
+    return {
+        "landmarks": {},
+        "crossings": [],
+        "confirmed_paths": [],
+        "open_problems": [],
+    }
 
 
 def save_routes(path: str, routes: dict) -> None:
@@ -121,11 +126,25 @@ def find_loc_crossing(state: dict, near_x: int, near_z: int, radius: int):
     """A Gate/Door ("Open") or Stile/Fence ("Climb-over") within radius tiles."""
     for loc in state.get("nearbyLocs") or []:
         options = loc.get("options") or []
-        action = "Open" if "Open" in options else ("Climb-over" if "Climb-over" in options else None)
-        if action and loc.get("name") in ("Gate", "Door", "Large door", "Stile", "Fence"):
+        action = (
+            "Open"
+            if "Open" in options
+            else ("Climb-over" if "Climb-over" in options else None)
+        )
+        if action and loc.get("name") in (
+            "Gate",
+            "Door",
+            "Large door",
+            "Stile",
+            "Fence",
+        ):
             if abs(loc["x"] - near_x) <= radius and abs(loc["z"] - near_z) <= radius:
                 entry = next(
-                    (o for o in loc.get("optionsWithIndex") or [] if o.get("text") == action),
+                    (
+                        o
+                        for o in loc.get("optionsWithIndex") or []
+                        if o.get("text") == action
+                    ),
                     None,
                 )
                 if entry:
@@ -151,7 +170,9 @@ def find_known_crossing(routes: dict, pos: tuple):
 def cross_via_dialog(character: str, crossing: dict, target: tuple, log) -> bool:
     npc_name = crossing.get("npc")
     state = read_state(character)
-    npc = next((n for n in state.get("nearbyNpcs") or [] if n.get("name") == npc_name), None)
+    npc = next(
+        (n for n in state.get("nearbyNpcs") or [] if n.get("name") == npc_name), None
+    )
     if not npc:
         return False
     act(character, "talkToNpc", {"npcIndex": npc["index"]})
@@ -177,11 +198,19 @@ def cross_via_dialog(character: str, crossing: dict, target: tuple, log) -> bool
         if pos_of(read_state(character)) != before:
             break
     after = pos_of(read_state(character))
-    log({"crossing": crossing.get("note", npc_name), "from": list(before), "to": list(after)})
+    log(
+        {
+            "crossing": crossing.get("note", npc_name),
+            "from": list(before),
+            "to": list(after),
+        }
+    )
     return after != before
 
 
-def sidestep(character: str, cur: tuple, target: tuple, hop_size: int, probe_radius: int, log):
+def sidestep(
+    character: str, cur: tuple, target: tuple, hop_size: int, probe_radius: int, log
+):
     """A few short perpendicular offsets, tried before giving up entirely.
 
     A boundary that blocks straight-line travel is usually crossable a short
@@ -213,7 +242,9 @@ def travel(args) -> str:
     routes = load_routes(args.routes)
     if args.landmark:
         if args.landmark not in routes.get("landmarks", {}):
-            raise Stop("unknown_landmark", "known: %s" % list(routes.get("landmarks", {})))
+            raise Stop(
+                "unknown_landmark", "known: %s" % list(routes.get("landmarks", {}))
+            )
         target = tuple(routes["landmarks"][args.landmark])
     else:
         target = (args.x, args.z)
@@ -233,8 +264,10 @@ def travel(args) -> str:
             record(args.routes, routes, start, target, hops, obstacles, True)
             return "arrived"
 
-        step = (cur[0] + clamp(dx, -args.hop_size, args.hop_size),
-                cur[1] + clamp(dz, -args.hop_size, args.hop_size))
+        step = (
+            cur[0] + clamp(dx, -args.hop_size, args.hop_size),
+            cur[1] + clamp(dz, -args.hop_size, args.hop_size),
+        )
         act(character, "walkTo", {"x": step[0], "z": step[1]})
         for _ in range(5):
             wait(character, args.ticks)
@@ -242,8 +275,14 @@ def travel(args) -> str:
             if pos_of(state) != cur:
                 break
         new_pos = pos_of(state)
-        emit({"round": round_number, "tick": state.get("tick"), "pos": list(new_pos),
-              "hp": (state.get("player") or {}).get("hp")})
+        emit(
+            {
+                "round": round_number,
+                "tick": state.get("tick"),
+                "pos": list(new_pos),
+                "hp": (state.get("player") or {}).get("hp"),
+            }
+        )
 
         if new_pos != cur:
             hops.append(new_pos)
@@ -254,8 +293,16 @@ def travel(args) -> str:
         loc_crossing = find_loc_crossing(state, cur[0], cur[1], args.probe_radius)
         if loc_crossing:
             loc, action, op_index = loc_crossing
-            act(character, "interactLoc",
-                {"x": loc["x"], "z": loc["z"], "locId": loc["id"], "optionIndex": op_index})
+            act(
+                character,
+                "interactLoc",
+                {
+                    "x": loc["x"],
+                    "z": loc["z"],
+                    "locId": loc["id"],
+                    "optionIndex": op_index,
+                },
+            )
             wait(character, 2)
             act(character, "walkTo", {"x": step[0], "z": step[1]})
             for _ in range(5):
@@ -263,7 +310,9 @@ def travel(args) -> str:
                 if pos_of(read_state(character)) != cur:
                     break
             if pos_of(read_state(character)) != cur:
-                obstacles.append({"pos": list(cur), "resolved_by": "%s:%s" % (loc["name"], action)})
+                obstacles.append(
+                    {"pos": list(cur), "resolved_by": "%s:%s" % (loc["name"], action)}
+                )
                 crossed = True
 
         if not crossed:
@@ -271,13 +320,26 @@ def travel(args) -> str:
             if known:
                 crossed = cross_via_dialog(character, known, target, emit)
                 if crossed:
-                    obstacles.append({"pos": list(cur), "resolved_by": "dialog:%s" % known.get("npc")})
+                    obstacles.append(
+                        {
+                            "pos": list(cur),
+                            "resolved_by": "dialog:%s" % known.get("npc"),
+                        }
+                    )
 
         if not crossed:
-            landed = sidestep(character, cur, target, args.hop_size, args.probe_radius, emit)
+            landed = sidestep(
+                character, cur, target, args.hop_size, args.probe_radius, emit
+            )
             if landed:
                 hops.append(landed)
-                obstacles.append({"pos": list(cur), "resolved_by": "sidestep", "landed": list(landed)})
+                obstacles.append(
+                    {
+                        "pos": list(cur),
+                        "resolved_by": "sidestep",
+                        "landed": list(landed),
+                    }
+                )
                 crossed = True
 
         if crossed:
@@ -287,7 +349,9 @@ def travel(args) -> str:
 
         stuck_streak += 1
         if stuck_streak >= args.patience:
-            record(args.routes, routes, start, target, hops, obstacles, False, stuck_at=cur)
+            record(
+                args.routes, routes, start, target, hops, obstacles, False, stuck_at=cur
+            )
             raise Stop(
                 "stuck",
                 "no Gate/Door/Stile, no known --routes crossing, and no sidestep "
@@ -295,11 +359,22 @@ def travel(args) -> str:
                 % (args.probe_radius, cur, args.routes),
             )
 
-    record(args.routes, routes, start, target, hops, obstacles, False, stuck_at=pos_of(state))
+    record(
+        args.routes,
+        routes,
+        start,
+        target,
+        hops,
+        obstacles,
+        False,
+        stuck_at=pos_of(state),
+    )
     return "max_rounds"
 
 
-def record(path, routes, start, target, hops, obstacles, success, stuck_at=None) -> None:
+def record(
+    path, routes, start, target, hops, obstacles, success, stuck_at=None
+) -> None:
     entry = {
         "from": list(start),
         "to": list(target),
@@ -332,9 +407,15 @@ def parse(argv) -> argparse.Namespace:
     parser.add_argument("--hop-size", type=int, default=7, help="Tiles per walkTo call")
     parser.add_argument("--ticks", type=int, default=4, help="Ticks to wait per hop")
     parser.add_argument("--max-rounds", type=int, default=150)
-    parser.add_argument("--patience", type=int, default=3, help="Stuck rounds to allow before stopping")
-    parser.add_argument("--probe-radius", type=int, default=15,
-                         help="Tiles to search for a crossing or sidestep opening")
+    parser.add_argument(
+        "--patience", type=int, default=3, help="Stuck rounds to allow before stopping"
+    )
+    parser.add_argument(
+        "--probe-radius",
+        type=int,
+        default=15,
+        help="Tiles to search for a crossing or sidestep opening",
+    )
     parser.add_argument("--min-hp", type=int, default=5, help="Stop at or under this")
     args = parser.parse_args(argv)
     if not args.landmark and (args.x is None or args.z is None):
@@ -350,7 +431,11 @@ def main(argv) -> int:
         outcome = travel(args)
     except Stop as stop:
         emit({"done": stop.reason, "detail": stop.detail})
-        return 1 if stop.reason in ("cli_unreadable", "no_state", "unknown_landmark") else 2
+        return (
+            1
+            if stop.reason in ("cli_unreadable", "no_state", "unknown_landmark")
+            else 2
+        )
     except KeyboardInterrupt:
         emit({"done": "interrupted", "detail": "the character keeps its last action"})
         return 2
