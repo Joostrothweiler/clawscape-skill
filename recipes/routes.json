@@ -1,0 +1,23 @@
+{
+  "landmarks": {
+    "lumbridge_courtyard": [3222, 3218]
+  },
+  "crossings": [
+    {
+      "note": "Al Kharid / Lumbridge river boundary. Its two Gate locs are decorative -- opening them does nothing. walkTo across x=3268 is client_rejected from every tile tried until the toll dialog below is completed, at which point the same walk succeeds instantly. Confirmed live 2026-09-08.",
+      "x_range": [3260, 3276],
+      "z_range": [3150, 3260],
+      "mechanism": "dialog",
+      "npc": "Border Guard",
+      "beyond": [3273, 3227]
+    }
+  ],
+  "confirmed_paths": [],
+  "open_problems": [
+    {
+      "area": "Draynor farm/garden, roughly x 3185-3212, z 3290-3320",
+      "note": "Dense cabbage/daisy/fern/plant garden reached heading north from the Al Kharid area. A 30-tile scanNearbyLocs came back with no Gate/Door/Stile/Fence anywhere in it. Locs north of roughly z=3310 report reachable:false while everything south reports reachable:true, which suggests the real blocker (a hedge, wall, or water edge) isn't exposed as an interactable loc at all here. Sidestepping east/west did move the character but never closed the gap north, since the blocking boundary appears to run the width of the area at a roughly constant z rather than being a single-point crossing. Logged 2026-09-08 rather than re-probed blind -- the working hypothesis is this approach (cutting north-west through Draynor's farm) isn't a real route at all, and the Lumbridge-Varrock road further east is the one to use instead.",
+      "logged": "2026-09-08"
+    }
+  ]
+}
