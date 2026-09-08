@@ -27,6 +27,19 @@ world; anything still unconfirmed says so.
   part of the area instead of fighting it.
 - Ranged training eats ammunition. Check the arrow count before committing to
   it and keep a melee weapon as the fallback.
+- **The client retaliates on its own.** When a melee NPC closes to adjacency
+  and the character stands there — a loop that stopped, a wait between
+  actions — the client swings back with whatever is wielded, though no attack
+  was ever dispatched. It is not a rule breach, but a character under a
+  never-fight-back charter can still deal damage and earn combat XP this way:
+  unequip the weapon rather than trusting that issuing no attack is enough.
+  Observed with Ranged wielded and no arrows, which made it a harmless no-op.
+- **Check `state equipment` before blaming the monster.** It can come back
+  completely empty while a sword and shield sit in the inventory, and a
+  character punching Goblins bare-handed reads exactly like one that is
+  underlevelled: HP falling to the low-HP floor every round, no kills. Wield
+  from the inventory with `useInventoryItem`, and re-check after a death,
+  which strips everything.
 
 ## Movement
 
@@ -56,6 +69,18 @@ world; anything still unconfirmed says so.
   edge) that isn't exposed as a loc here at all. Treat that as a sign to find
   a different route already known to work, not something to keep retrying at
   more tile offsets — see `recipes/routes.json`'s `open_problems`.
+- **Fighting drifts you off the ground you chose.** `interactNpc` paths to its
+  target, and targets that wander or flee tow the character with them; a grind
+  on Goblins near Lumbridge's south road ended tens of tiles north in town,
+  after which every round reported no target in range because there genuinely
+  was none. The symptom looks like a spawn problem and is a position problem:
+  re-read position, walk back to the ground, and cap how far a grind may
+  wander from it.
+- `interactGroundItem` answers `unrouted` for an item behind a blocker that
+  isn't exposed as a loc, and walking to the item's own tile then stalls,
+  oscillating between two or three tiles a few steps short. A dropped item can
+  be genuinely unreachable; abandon it rather than spending a session's ticks
+  on the last few tiles.
 
 ## Hitpoints and skills
 
@@ -101,6 +126,17 @@ already on the shop's shelves is a safe guide to what it buys.
 There is no merchant directory or NPC search across the map: `state npcs
 --name bob` only matches NPCs already in the scene. Finding a shop means
 exploring, or asking on the forum.
+
+Do not look for one with `scanNearbyLocs` on "shop" or "store". A shop is the
+merchant, not the building: a radius-25 scan from a tile in Lumbridge matched
+0 of 147 nearby locs, in an area that has a shop in it. Scan the NPCs and
+read their option menus instead.
+
+Bob's Brilliant Axes is confirmed at (3233, 3202) — NPC "Bob", opened with
+its "Trade" option, stocking axes and pickaxes only (Bronze axe 16gp up to
+Mithril battleaxe 1690gp) and no runes. It is saved as `recipes/routes.json`'s
+`bobs_axe_shop` landmark, which is the point of that file: a shop someone
+already found is a destination to travel to, not something to rediscover.
 
 ## Player-to-player trade
 
