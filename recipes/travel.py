@@ -36,6 +36,7 @@ the same dead end.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import subprocess
@@ -116,6 +117,27 @@ def save_routes(path: str, routes: dict) -> None:
         json.dump(routes, handle, indent=2)
         handle.write("\n")
     os.replace(tmp, path)
+
+
+def update_routes(path: str, mutate) -> None:
+    """Apply `mutate(routes)` to a freshly-loaded routes.json, under a lock
+    that spans both the load and the save.
+
+    routes.json is shared by every character playing at once, and a writer
+    that loads it at the start of a long run and saves its own copy at the
+    end silently drops whatever another writer added in between -- confirmed
+    live, a saved landmark clobbered by another character's finished walk.
+    Read it however you like, but write it only through here.
+    """
+    lock_path = path + ".lock"
+    with open(lock_path, "a+") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            routes = load_routes(path)
+            mutate(routes)
+            save_routes(path, routes)
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
 
 
 def clamp(value: int, low: int, high: int) -> int:
@@ -261,7 +283,7 @@ def travel(args) -> str:
         cur = pos_of(state)
         dx, dz = target[0] - cur[0], target[1] - cur[1]
         if abs(dx) <= 1 and abs(dz) <= 1:
-            record(args.routes, routes, start, target, hops, obstacles, True)
+            record(args.routes, start, target, hops, obstacles, True)
             return "arrived"
 
         step = (
@@ -349,9 +371,7 @@ def travel(args) -> str:
 
         stuck_streak += 1
         if stuck_streak >= args.patience:
-            record(
-                args.routes, routes, start, target, hops, obstacles, False, stuck_at=cur
-            )
+            record(args.routes, start, target, hops, obstacles, False, stuck_at=cur)
             raise Stop(
                 "stuck",
                 "no Gate/Door/Stile, no known --routes crossing, and no sidestep "
@@ -372,9 +392,7 @@ def travel(args) -> str:
     return "max_rounds"
 
 
-def record(
-    path, routes, start, target, hops, obstacles, success, stuck_at=None
-) -> None:
+def record(path, start, target, hops, obstacles, success, stuck_at=None) -> None:
     entry = {
         "from": list(start),
         "to": list(target),
@@ -382,12 +400,14 @@ def record(
         "obstacles_crossed": obstacles,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    if success:
-        routes.setdefault("confirmed_paths", []).append(entry)
-    else:
+    if not success:
         entry["stuck_at"] = list(stuck_at) if stuck_at else None
-        routes.setdefault("open_problems", []).append(entry)
-    save_routes(path, routes)
+
+    def mutate(routes: dict) -> None:
+        key = "confirmed_paths" if success else "open_problems"
+        routes.setdefault(key, []).append(entry)
+
+    update_routes(path, mutate)
 
 
 def emit(row: dict) -> None:

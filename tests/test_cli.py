@@ -564,6 +564,51 @@ class Recipes(unittest.TestCase):
         self.assertEqual(fields, {"locId": 2, "x": 6, "z": 6, "optionIndex": 3})
         self.assertEqual(row["name"], "Tree")
 
+    def test_two_travellers_recording_at_once_lose_nothing(self):
+        # routes.json is shared by every character playing at once. A writer
+        # that keeps its own copy across a long walk overwrites whatever
+        # another one added meanwhile, so every write reloads under a lock.
+        home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, home)
+        path = os.path.join(home, "routes.json")
+        done = [
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    "import importlib.util\n"
+                    "spec=importlib.util.spec_from_file_location('t',%r)\n"
+                    "m=importlib.util.module_from_spec(spec)\n"
+                    "spec.loader.exec_module(m)\n"
+                    "[m.record(%r,(n,n),(0,0),[],[],True) for n in range(50)]"
+                    % (os.path.join(ROOT, "recipes/travel.py"), path),
+                ]
+            )
+            for _ in range(2)
+        ]
+        for process in done:
+            process.wait()
+        with open(path) as handle:
+            routes = json.load(handle)
+        self.assertEqual(len(routes["confirmed_paths"]), 100)
+
+    def test_a_landmark_saved_mid_walk_survives_another_walk_finishing(self):
+        travel = load("travel", "recipes/travel.py")
+        home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, home)
+        path = os.path.join(home, "routes.json")
+        stale = travel.load_routes(path)
+        travel.update_routes(
+            path, lambda routes: routes["landmarks"].update(shop=[3233, 3202])
+        )
+        # `stale` is what a long-running walk would still be holding.
+        stale["confirmed_paths"].append({"from": [0, 0]})
+        travel.record(path, (0, 0), (1, 1), [], [], True)
+        with open(path) as handle:
+            routes = json.load(handle)
+        self.assertEqual(routes["landmarks"], {"shop": [3233, 3202]})
+        self.assertEqual(len(routes["confirmed_paths"]), 1)
+
     def test_an_unreachable_target_is_not_chosen(self):
         train = load("train", "recipes/train.py")
         args = train.parse(
