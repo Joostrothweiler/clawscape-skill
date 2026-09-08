@@ -654,5 +654,261 @@ class Recipes(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "no_target")
 
 
+class Minds(unittest.TestCase):
+    """mind.py: goals that drop themselves, rules that read the situation."""
+
+    def setUp(self):
+        self.mind = load("mind", "recipes/mind.py")
+        self.home = tempfile.mkdtemp()
+        self.memory = os.path.join(self.home, "memory.jsonl")
+
+    def tearDown(self):
+        shutil.rmtree(self.home, ignore_errors=True)
+
+    def beliefs(self, state, facts=None, routes=None, now=1000.0):
+        return self.mind.Beliefs(state, facts or [], routes or {}, now)
+
+    def world(self, **extra):
+        state = {
+            "player": {"hp": 10, "maxHp": 20, "worldX": 3222, "worldZ": 3218},
+            "skills": [
+                {"name": "Attack", "baseLevel": 12, "level": 14, "experience": 1500}
+            ],
+            "inventory": [{"id": 558, "name": "Mind rune", "count": 30}],
+        }
+        state.update(extra)
+        return state
+
+    def test_a_renamed_state_section_is_an_error_not_an_empty_answer(self):
+        # groundItems read as "ground" returned nothing for a whole session
+        # while every recipe reported success. A belief that cannot be read
+        # has to say so.
+        beliefs = self.beliefs(self.world(ground=[{"name": "Bones"}]))
+        with self.assertRaises(self.mind.Stop) as caught:
+            beliefs.ground_near("bones")
+        self.assertEqual(caught.exception.reason, "state_schema")
+        self.assertIn("groundItems", caught.exception.detail)
+
+    def test_a_missing_required_section_fails_before_any_rule_runs(self):
+        state = self.world()
+        del state["skills"]
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.beliefs(state)
+        self.assertEqual(caught.exception.reason, "state_schema")
+
+    def test_a_level_is_the_trained_one_not_the_boosted_one(self):
+        # `level` is drained, boosted, or for Hitpoints current HP. A goal
+        # watching it is achieved by eating a fish.
+        self.assertEqual(self.beliefs(self.world()).level("attack"), 12)
+
+    def test_items_are_counted_by_id_or_by_name(self):
+        beliefs = self.beliefs(self.world())
+        self.assertEqual(beliefs.have(558), 30)
+        self.assertEqual(beliefs.have("mind rune"), 30)
+        self.assertEqual(beliefs.have("law rune"), 0)
+
+    def test_a_stop_reason_becomes_a_fact_a_condition_can_read(self):
+        facts = [{"t": 900.0, "recipe": "train", "reason": "low_hp", "ok": False}]
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertTrue(beliefs.failed_recently("train", "low_hp", 900))
+        self.assertFalse(beliefs.failed_recently("train", "low_hp", 50))
+        self.assertFalse(beliefs.failed_recently("travel", "low_hp", 900))
+        self.assertEqual(beliefs.since("train", "low_hp"), 100.0)
+        self.assertEqual(beliefs.since("travel"), float("inf"))
+
+    def test_a_success_is_not_a_failure(self):
+        facts = [
+            {"t": 990.0, "recipe": "train", "reason": "target_reached", "ok": True}
+        ]
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertFalse(beliefs.failed_recently("train"))
+        self.assertTrue(beliefs.succeeded_recently("train"))
+
+    def test_a_goal_drops_itself_the_cycle_its_condition_holds(self):
+        namespace = self.beliefs(self.world()).namespace()
+        goals = [
+            {"name": "attack_20", "satisfied": "level('Attack') >= 20"},
+            {"name": "attack_10", "satisfied": "level('Attack') >= 10"},
+        ]
+        still_open, achieved = self.mind.open_goals(goals, namespace)
+        self.assertEqual(still_open, ["attack_20"])
+        self.assertEqual(achieved, ["attack_10"])
+
+    def test_the_first_matching_rule_wins_and_an_empty_when_is_the_catch_all(self):
+        namespace = self.beliefs(self.world()).namespace()
+        rules = [
+            {"name": "hurt", "when": "hp_ratio < 0.2"},
+            {"name": "rich", "when": "have(558) >= 10"},
+            {"name": "anything", "when": ""},
+        ]
+        rule, considered = self.mind.select(rules, namespace, True)
+        self.assertEqual(rule["name"], "rich")
+        self.assertEqual([row["matched"] for row in considered], [False, True])
+
+    def test_a_gap_in_the_rules_is_reported_rather_than_papered_over(self):
+        namespace = self.beliefs(self.world()).namespace()
+        rule, _ = self.mind.select(
+            [{"name": "never", "when": "hp > 100"}], namespace, False
+        )
+        self.assertIsNone(rule)
+
+    def test_a_broken_condition_names_the_rule_it_came_from(self):
+        namespace = self.beliefs(self.world()).namespace()
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.evaluate("have(", namespace, "rule 'oops'")
+        self.assertEqual(caught.exception.reason, "bad_expression")
+        self.assertIn("oops", caught.exception.detail)
+
+    def test_a_condition_cannot_reach_past_the_beliefs(self):
+        namespace = self.beliefs(self.world()).namespace()
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.evaluate("open('/etc/passwd')", namespace, "rule 'bad'")
+        self.assertEqual(caught.exception.reason, "bad_expression")
+
+    def write_mind(self, mind: dict) -> str:
+        path = os.path.join(self.home, "mind.json")
+        with open(path, "w") as handle:
+            json.dump(mind, handle)
+        return path
+
+    def test_the_shipped_example_mind_loads(self):
+        mind = self.mind.load_mind(os.path.join(ROOT, "recipes/minds/example.json"))
+        self.assertTrue(mind["goals"])
+        self.assertEqual(mind["rules"][-1]["when"], "")
+
+    def test_every_condition_in_the_example_is_one_the_beliefs_can_answer(self):
+        # A typo in a condition is invisible until the cycle that needs it,
+        # which on a --loop run is hours in. Ask them all here instead.
+        mind = self.mind.load_mind(os.path.join(ROOT, "recipes/minds/example.json"))
+        state = self.world(
+            nearbyNpcs=[], nearbyLocs=[], nearbyPlayers=[], groundItems=[], dialog=None
+        )
+        namespace = self.beliefs(state).namespace()
+        namespace["goals"] = []
+        namespace["goal"] = lambda name: False
+        for goal in mind["goals"]:
+            self.mind.evaluate(goal["satisfied"], namespace, goal["name"])
+        for rule in mind["rules"]:
+            self.mind.evaluate(rule["when"] or "True", namespace, rule["name"])
+
+    def test_a_rule_naming_no_recipe_is_refused_before_the_character_moves(self):
+        for then, reason in (
+            ({"recipe": "../../clawscape"}, "bad_mind"),
+            ({"recipe": "nonesuch"}, "unknown_recipe"),
+            ({"recipe": "train", "argv": ["--character", "someone_else"]}, "bad_mind"),
+        ):
+            path = self.write_mind({"rules": [{"name": "r", "when": "", "then": then}]})
+            with self.assertRaises(self.mind.Stop) as caught:
+                self.mind.load_mind(path)
+            self.assertEqual(caught.exception.reason, reason)
+
+    def test_a_rule_with_no_when_at_all_is_refused(self):
+        # "" is a catch-all someone chose; a missing key is one nobody did.
+        path = self.write_mind({"rules": [{"name": "r", "then": {"recipe": "train"}}]})
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.load_mind(path)
+        self.assertEqual(caught.exception.reason, "bad_mind")
+
+    def test_a_goal_with_no_condition_could_never_be_dropped(self):
+        path = self.write_mind(
+            {
+                "goals": [{"name": "forever"}],
+                "rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}],
+            }
+        )
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.mind.load_mind(path)
+        self.assertEqual(caught.exception.reason, "bad_mind")
+
+    def run_mind(self, mind: dict, state: dict, *extra: str):
+        """One cycle against a fixed world, dispatching nothing."""
+        path = self.write_mind(mind)
+        self.mind.read_state = lambda character: state
+        args = self.mind.parse(
+            [
+                "--character",
+                "demo",
+                "--mind",
+                path,
+                "--memory",
+                self.memory,
+                "--routes",
+                os.path.join(self.home, "routes.json"),
+                *extra,
+            ]
+        )
+        lines = []
+        self.mind.emit = lambda row: lines.append(row)
+        return self.mind.run(args), lines
+
+    def test_a_run_whose_goals_all_hold_is_over_before_it_acts(self):
+        outcome, lines = self.run_mind(
+            {
+                "goals": [{"name": "attack_10", "satisfied": "level('Attack') >= 10"}],
+                "rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}],
+            },
+            self.world(),
+        )
+        self.assertEqual(outcome[0], "goals_achieved")
+        self.assertEqual(lines[0]["achieved"], ["attack_10"])
+        self.assertFalse(os.path.exists(self.memory))
+
+    def test_a_rule_may_ask_which_goals_are_still_open(self):
+        outcome, lines = self.run_mind(
+            {
+                "goals": [
+                    {"name": "attack_20", "satisfied": "level('Attack') >= 20"},
+                    {"name": "attack_10", "satisfied": "level('Attack') >= 10"},
+                ],
+                "rules": [
+                    {
+                        "name": "done_already",
+                        "when": "goal('attack_10')",
+                        "then": {"recipe": "travel"},
+                    },
+                    {
+                        "name": "still_to_do",
+                        "when": "goal('attack_20')",
+                        "then": {"recipe": "train"},
+                    },
+                ],
+            },
+            self.world(),
+            "--dry-run",
+        )
+        self.assertEqual(outcome[0], "dry_run")
+        self.assertEqual(lines[-1]["chose"], "still_to_do")
+
+    def test_a_dead_character_stops_the_run_before_a_rule_is_chosen(self):
+        state = self.world()
+        state["player"]["isDead"] = True
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.run_mind(
+                {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+                state,
+            )
+        self.assertEqual(caught.exception.reason, "died")
+
+    def test_a_landmark_nobody_confirmed_is_not_known(self):
+        routes = {"landmarks": {"lumbridge_courtyard": [3222, 3218]}}
+        beliefs = self.beliefs(self.world(), routes=routes)
+        self.assertTrue(beliefs.known("lumbridge_courtyard"))
+        self.assertFalse(beliefs.known("aubury_rune_shop"))
+
+    def test_a_mind_file_needs_a_character_like_every_other_recipe(self):
+        done = subprocess.run(
+            [
+                sys.executable,
+                os.path.join(ROOT, "recipes/mind.py"),
+                "--character",
+                "demo",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("--mind", done.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,3 +4,4 @@ __pycache__/
 .test-home/
 .ruff_cache/
 recipes/routes.json.lock
+recipes/memory.jsonl
