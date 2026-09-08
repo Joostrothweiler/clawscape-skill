@@ -5,8 +5,10 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -205,6 +207,239 @@ class Contract(unittest.TestCase):
             reference = f.read()
         for kind in cli.ACTION_FIELDS:
             self.assertIn(kind, reference, kind)
+
+
+class Identity(unittest.TestCase):
+    """The charter is the owner's; the journal is the character's own record."""
+
+    def setUp(self):
+        self.home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.home, True)
+
+    def directory(self) -> str:
+        # The digest must be derived the way the subprocess derives it: from a
+        # config with no login, not from whatever is in the real ~/.clawscape.
+        config = {"server": cli.DEFAULT_SERVER}
+        return os.path.join(
+            self.home, "identity", cli.identity_digest(config, "gorruk")
+        )
+
+    def identity(self, *words: str):
+        done = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "clawscape.py"), "identity", *words],
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                "CLAWSCAPE_HOME": self.home,
+                "CLAWSCAPE_CHARACTER": "gorruk",
+            },
+        )
+        raw = done.stdout.strip() or done.stderr.strip()
+        return done.returncode, json.loads(raw) if raw else {}
+
+    def test_a_resolved_commitment_leaves_the_record_however_old_it_is(self):
+        rows = [
+            {"kind": "commitment", "at": "2026-08-01T10:00:00Z", "id": "c7"},
+            {"kind": "commitment", "at": "2026-09-01T10:00:00Z", "id": "c9"},
+            {
+                "kind": "commitment",
+                "at": "2026-09-02T10:00:00Z",
+                "id": "c7",
+                "state": "closed",
+            },
+        ]
+        view = cli.project_standing(rows)
+        self.assertEqual([row["id"] for row in view["commitments"]], ["c9"])
+
+    def test_a_relation_keeps_only_its_latest_line_per_name(self):
+        rows = [
+            {
+                "kind": "relation",
+                "at": "2026-09-01T10:00:00Z",
+                "who": "thrag",
+                "text": "traded fairly",
+            },
+            {
+                "kind": "relation",
+                "at": "2026-09-02T10:00:00Z",
+                "who": "thrag",
+                "text": "scammed me",
+            },
+            {
+                "kind": "relation",
+                "at": "2026-09-02T11:00:00Z",
+                "who": "mira",
+                "text": "ally",
+            },
+        ]
+        view = cli.project_standing(rows)
+        self.assertEqual(view["counts"]["relations"], 2)
+        self.assertEqual(
+            {row["who"]: row["text"] for row in view["relations"]},
+            {"thrag": "scammed me", "mira": "ally"},
+        )
+
+    def test_the_capped_buckets_stay_a_bounded_read_and_say_how_many_there_were(self):
+        rows = [
+            {
+                "kind": "milestone",
+                "at": "2026-09-%02dT10:00:00Z" % (day + 1),
+                "text": "milestone %d" % day,
+            }
+            for day in range(25)
+        ]
+        view = cli.project_standing(rows)
+        self.assertEqual(len(view["milestones"]), cli.IDENTITY_CAPS["milestones"])
+        self.assertEqual(view["counts"]["milestones"], 25)
+        # The newest are the ones kept.
+        self.assertEqual(view["milestones"][-1]["text"], "milestone 24")
+
+    def test_open_commitments_are_never_trimmed(self):
+        rows = [
+            {"kind": "commitment", "at": "2026-09-01T10:00:00Z", "id": "c%d" % n}
+            for n in range(40)
+        ]
+        self.assertEqual(len(cli.project_standing(rows)["commitments"]), 40)
+
+    def test_show_names_the_boundary_between_charter_and_journal(self):
+        code, answer = self.identity("show")
+        self.assertEqual(code, 0)
+        self.assertIsNone(answer["charter"])
+        self.assertIn("identity charter --body-file", answer["hint"])
+        self.assertIn("not instructions", answer["notice"])
+
+    def test_a_note_too_long_to_be_a_summary_is_refused(self):
+        code, answer = self.identity("note", "episode", "--text", "x" * 400)
+        self.assertEqual(code, 1)
+        self.assertIn("not a transcript", answer["error"])
+
+    def test_an_unknown_note_kind_says_what_the_kinds_are(self):
+        code, answer = self.identity("note", "feelings", "--text", "hm")
+        self.assertEqual(code, 1)
+        for kind in cli.IDENTITY_KINDS:
+            self.assertIn(kind, answer["error"])
+
+    def test_a_relation_without_a_name_is_refused_before_it_is_written(self):
+        code, answer = self.identity("note", "relation", "--text", "nice")
+        self.assertEqual(code, 1)
+        self.assertIn("--who", answer["error"])
+
+    def test_a_commitment_returns_the_id_that_resolving_it_later_needs(self):
+        code, answer = self.identity(
+            "note", "commitment", "--who", "thrag", "--text", "owes a willow log"
+        )
+        self.assertEqual(code, 0)
+        code, resolved = self.identity("resolve", answer["id"])
+        self.assertEqual((code, resolved), (0, {"resolved": answer["id"]}))
+        code, view = self.identity("show")
+        self.assertEqual(view["commitments"], [])
+
+    def test_resolving_a_commitment_that_does_not_exist_fails_loudly(self):
+        code, answer = self.identity("resolve", "c404")
+        self.assertEqual(code, 1)
+        self.assertIn("c404", answer["error"])
+
+    def test_closing_a_session_summarizes_it_and_compacts_standing(self):
+        self.identity("note", "commitment", "--text", "settle up", "--id", "c1")
+        self.identity("note", "episode", "--text", "chopped willows")
+        self.identity("resolve", "c1")
+        code, answer = self.identity("close", "--summary", "Woodcutting to 34.")
+        self.assertEqual(code, 0)
+        self.assertTrue(answer["closed"])
+        # The resolved commitment and its closing line both leave the file.
+        self.assertLess(answer["standing"]["after"], answer["standing"]["before"])
+        code, view = self.identity("show")
+        self.assertEqual(view["sessions"][-1]["summary"], "Woodcutting to 34.")
+        self.assertEqual(view["commitments"], [])
+
+    def test_closing_when_no_session_is_open_says_so(self):
+        code, answer = self.identity("close", "--summary", "nothing happened")
+        self.assertEqual(code, 1)
+        self.assertIn("session opens on connect", answer["error"])
+
+    def test_an_unclosed_session_reads_as_dropped_once_a_later_one_exists(self):
+        folder = os.path.join(self.directory(), "sessions")
+        os.makedirs(folder)
+        for day in ("20260901T100000Z", "20260902T100000Z"):
+            with open(os.path.join(folder, day + ".jsonl"), "w", encoding="utf-8") as f:
+                f.write(json.dumps({"kind": "open", "at": day}) + "\n")
+        code, view = self.identity("show")
+        self.assertEqual(code, 0)
+        self.assertTrue(view["sessions"][0]["dropped"])
+        # The newest is still being played, not abandoned.
+        self.assertTrue(view["sessions"][1]["open"])
+        self.assertNotIn("dropped", view["sessions"][1])
+
+    def test_compaction_folds_only_the_over_cap_sessions_and_keeps_the_raw_lines(self):
+        directory = self.directory()
+        folder = os.path.join(directory, "sessions")
+        os.makedirs(folder)
+        for day in range(1, cli.IDENTITY_CAPS["sessions"] + 4):
+            stamp = "202608%02dT100000Z" % day
+            with open(
+                os.path.join(folder, stamp + ".jsonl"), "w", encoding="utf-8"
+            ) as f:
+                f.write(json.dumps({"kind": "open", "at": stamp}) + "\n")
+                f.write(
+                    json.dumps(
+                        {"kind": "close", "at": stamp, "summary": "day %d" % day}
+                    )
+                    + "\n"
+                )
+        code, view = self.identity("show")
+        self.assertEqual(len(view["sessions"]), cli.IDENTITY_CAPS["sessions"])
+        self.assertEqual(
+            view["compaction"]["sessions"], cli.IDENTITY_CAPS["sessions"] + 3
+        )
+        code, answer = self.identity("compact", "--summary", "August: chopped trees.")
+        self.assertEqual((code, answer["compacted"]), (0, 3))
+        code, view = self.identity("show")
+        self.assertNotIn("compaction", view)
+        # An era is one step from a summary written during play, and eras are
+        # never folded again.
+        self.assertEqual(view["eras"][0]["derived"], 1)
+        self.assertEqual(view["eras"][0]["sessions"], 3)
+        self.assertEqual(
+            sorted(os.listdir(os.path.join(directory, "archive", "sessions"))),
+            ["2026080%dT100000Z.jsonl" % day for day in (1, 2, 3)],
+        )
+
+    def test_compaction_below_the_cap_changes_nothing(self):
+        code, answer = self.identity("compact", "--summary", "nothing to fold")
+        self.assertEqual((code, answer["compacted"]), (0, 0))
+
+    def test_a_torn_line_costs_only_itself(self):
+        path = os.path.join(self.home, "torn.jsonl")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write('{"kind":"milestone","at":"2026-09-01T10:00:00Z"}\n')
+            handle.write('{"kind":"milestone","at":"2026-0\n')
+            handle.write('{"kind":"milestone","at":"2026-09-02T10:00:00Z"}\n')
+        self.assertEqual(len(cli.read_lines(path)), 2)
+
+    def test_two_agents_appending_at_once_lose_nothing(self):
+        path = os.path.join(self.home, "shared.jsonl")
+        done = [
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    "import importlib.util,sys\n"
+                    "spec=importlib.util.spec_from_file_location('c',%r)\n"
+                    "m=importlib.util.module_from_spec(spec)\n"
+                    "spec.loader.exec_module(m)\n"
+                    "[m.append_line(%r,{'kind':'episode','who':%r,'n':n}) "
+                    "for n in range(50)]"
+                    % (os.path.join(ROOT, "clawscape.py"), path, who),
+                ]
+            )
+            for who in ("one", "two")
+        ]
+        for process in done:
+            process.wait()
+        rows = cli.read_lines(path)
+        self.assertEqual(len(rows), 100)
+        self.assertEqual(len([row for row in rows if row["who"] == "one"]), 50)
 
 
 class Recipes(unittest.TestCase):

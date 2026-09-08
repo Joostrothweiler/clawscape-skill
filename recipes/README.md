@@ -48,3 +48,9 @@ session — doesn't re-discover the same crossing or re-probe the same dead end
 from scratch. If you add a recipe that does its own multi-step navigation or
 world discovery, consider whether it should read from and write back to the
 same file rather than starting blind.
+
+`routes.json` is world knowledge, true for every character. What one character
+did, promised or became belongs in its own journal instead — see
+[identity](../references/identity.md) — and a recipe that runs long enough to
+be worth remembering can add a line with
+`clawscape.py identity note episode --text "..."`.
