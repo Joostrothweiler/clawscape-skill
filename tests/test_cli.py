@@ -507,9 +507,24 @@ class Recipes(unittest.TestCase):
         train = load("train", "recipes/train.py")
         with self.assertRaises(train.Stop) as caught:
             train.clear_continuation(
-                "demo", {"dialog": {"isOpen": True, "options": [{"index": 1}]}}
+                "demo",
+                {"dialog": {"isOpen": True, "options": [{"index": 1}, {"index": 2}]}},
             )
         self.assertEqual(caught.exception.reason, "dialog_choice")
+
+    def test_a_level_up_page_offers_one_option_and_is_cleared_anyway(self):
+        # The dialog this exists to clear is not option-less: it carries a
+        # single "Click here to continue". Handing that back stops the grind
+        # at its first level-up.
+        train = load("train", "recipes/train.py")
+        sent = []
+        train.act = lambda character, kind, fields: sent.append((kind, fields))
+        dialog = {
+            "isOpen": True,
+            "options": [{"index": 1, "text": "Click here to continue"}],
+        }
+        self.assertTrue(train.clear_continuation("demo", {"dialog": dialog}))
+        self.assertEqual(sent, [("clickDialogOption", {"optionIndex": 0})])
 
     def test_a_closed_dialog_needs_no_clearing(self):
         train = load("train", "recipes/train.py")
