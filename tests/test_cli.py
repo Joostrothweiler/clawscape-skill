@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -408,6 +409,21 @@ class Identity(unittest.TestCase):
     def test_compaction_below_the_cap_changes_nothing(self):
         code, answer = self.identity("compact", "--summary", "nothing to fold")
         self.assertEqual((code, answer["compacted"]), (0, 0))
+
+    def test_nothing_it_creates_is_readable_by_another_account(self):
+        # The worst case is an identity write being the first command ever run:
+        # ~/.clawscape is then an intermediate directory, not the leaf.
+        code, _ = self.identity("note", "episode", "--text", "first ever command")
+        self.assertEqual(code, 0)
+        seen = 0
+        for root, folders, files in os.walk(self.home):
+            for name in folders + files:
+                path = os.path.join(root, name)
+                mode = stat.S_IMODE(os.stat(path).st_mode)
+                self.assertEqual(mode & 0o077, 0, "%s is %o" % (path, mode))
+                seen += 1
+        self.assertEqual(stat.S_IMODE(os.stat(self.home).st_mode) & 0o077, 0)
+        self.assertGreater(seen, 2)
 
     def test_a_torn_line_costs_only_itself(self):
         path = os.path.join(self.home, "torn.jsonl")

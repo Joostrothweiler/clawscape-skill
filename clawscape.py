@@ -583,7 +583,7 @@ def snapshot_path(config: dict, character: str) -> str:
 
 
 def buffer_state(path: str, state: dict) -> None:
-    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    secure_makedirs(os.path.dirname(path))
     descriptor, temporary = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -793,6 +793,29 @@ def now_stamp() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+def secure_makedirs(path: str) -> None:
+    """Create a directory and every missing parent, each one owner-only.
+
+    os.makedirs passes its mode to the leaf alone, so a deeper first write
+    would leave ~/.clawscape itself listable by other accounts on the machine.
+    A charter sits beside a login token; none of it is anyone else's business.
+    Directories that already exist keep the permissions they have.
+    """
+    missing = []
+    current = os.path.abspath(path)
+    while not os.path.isdir(current):
+        missing.append(current)
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    for directory in reversed(missing):
+        try:
+            os.mkdir(directory, 0o700)
+        except FileExistsError:
+            pass
+
+
 def append_line(path: str, entry: dict) -> None:
     """Add one JSON object to a log, without reading it first.
 
@@ -801,7 +824,7 @@ def append_line(path: str, entry: dict) -> None:
     is the only operation that rewrites a file, and it is the only one that
     locks.
     """
-    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    secure_makedirs(os.path.dirname(path))
     handle = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
     with os.fdopen(handle, "a", encoding="utf-8") as out:
         out.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -935,7 +958,7 @@ def archive_file(directory: str, path: str, folder: str) -> str:
     checked against what was actually written.
     """
     target = os.path.join(directory, "archive", folder)
-    os.makedirs(target, mode=0o700, exist_ok=True)
+    secure_makedirs(target)
     name = os.path.basename(path)
     destination = os.path.join(target, name)
     if os.path.exists(destination):
@@ -1281,7 +1304,7 @@ def run(argv) -> dict:
             text = read_body_file(args).strip()
             if not text:
                 raise Failure("The charter file is empty.")
-            os.makedirs(directory, mode=0o700, exist_ok=True)
+            secure_makedirs(directory)
             path = os.path.join(directory, "charter.md")
             temporary = "%s.%d.tmp" % (path, os.getpid())
             handle = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
