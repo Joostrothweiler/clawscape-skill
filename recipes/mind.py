@@ -64,7 +64,10 @@ file next.
 
 Goals are conditions, re-checked every cycle, not entries in a list that get
 crossed off: a goal whose condition stops holding (runes spent, a level
-drained) comes back on its own. When every goal holds, the run is over.
+drained) comes back on its own. When every goal holds, the run is over. A
+mind with no goals at all is never over: that is a character that reacts for
+as long as it is left running, stopped by `--stop-file`, `--max-cycles` or a
+situation its rules have no answer to.
 
 What a `when` may ask, and nothing else:
 
@@ -112,6 +115,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -536,23 +540,32 @@ def run_recipe(character: str, call: dict) -> tuple:
     path = os.path.join(HERE, call["recipe"] + ".py")
     argv = [str(word) for word in call.get("argv") or []]
     command = [sys.executable, path, *argv, "--character", character]
-    process = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
+    # stderr goes to a file rather than a second pipe. Draining one pipe to
+    # the end while the other fills its buffer is a deadlock: the child blocks
+    # writing the traceback nobody is reading yet, and the parent blocks
+    # waiting for the stdout line that will never come. A --loop run failing
+    # that way hangs silently, which is the worst shape a stop can take here.
     last = {}
-    for line in process.stdout:
-        line = line.rstrip("\n")
-        if not line.strip():
-            continue
-        print(line, flush=True)
-        try:
-            row = json.loads(line)
-        except ValueError:
-            continue
-        if isinstance(row, dict) and "done" in row:
-            last = row
-    stderr = (process.stderr.read() or "").strip()
-    code = process.wait()
+    with tempfile.TemporaryFile("w+") as errors:
+        # The `with` matters: it closes the stdout pipe. A --loop run leaks one
+        # file descriptor per cycle without it, and only finds out hours later.
+        with subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=errors, text=True
+        ) as process:
+            for line in process.stdout:
+                line = line.rstrip("\n")
+                if not line.strip():
+                    continue
+                print(line, flush=True)
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(row, dict) and "done" in row:
+                    last = row
+            code = process.wait()
+        errors.seek(0)
+        stderr = errors.read().strip()
     reason = last.get("done")
     if not reason:
         # A recipe that dies without a `done` line has still told us

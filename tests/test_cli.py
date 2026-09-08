@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -10,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -894,6 +897,151 @@ class Minds(unittest.TestCase):
         beliefs = self.beliefs(self.world(), routes=routes)
         self.assertTrue(beliefs.known("lumbridge_courtyard"))
         self.assertFalse(beliefs.known("aubury_rune_shop"))
+
+    def fake_recipe(self, body: str) -> None:
+        """A recipe beside a temporary HERE, so dispatch can be run for real."""
+        self.mind.HERE = self.home
+        with open(os.path.join(self.home, "fake.py"), "w") as handle:
+            handle.write("import sys\n" + body)
+
+    def dispatch(self, argv=None):
+        """run_recipe with its forwarded output captured."""
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            result = self.mind.run_recipe(
+                "demo", {"recipe": "fake", "argv": argv or []}
+            )
+        return result, stdout.getvalue()
+
+    def test_a_recipe_s_own_lines_are_forwarded_and_its_last_done_is_the_outcome(self):
+        self.fake_recipe(
+            "print('{\"round\": 1}')\n"
+            'print(\'{"done": "target_reached", "detail": "level 20"}\')\n'
+            "print(' ')\n"
+            "sys.exit(0)\n"
+        )
+        (reason, detail, code), forwarded = self.dispatch()
+        self.assertEqual((reason, detail, code), ("target_reached", "level 20", 0))
+        self.assertIn('{"round": 1}', forwarded)
+        self.assertEqual(len(forwarded.strip().splitlines()), 2)
+
+    def test_the_flags_a_rule_names_reach_the_recipe_with_the_character_added(self):
+        self.fake_recipe(
+            'print(\'{"done": "%s"}\' % " ".join(sys.argv[1:]))\nsys.exit(0)\n'
+        )
+        (reason, _, _), _ = self.dispatch(["--npc", "goblin"])
+        self.assertEqual(reason, "--npc goblin --character demo")
+
+    def test_a_recipe_that_dies_without_a_done_line_still_reports_something(self):
+        self.fake_recipe('sys.stderr.write("Traceback: boom\\n")\nsys.exit(1)\n')
+        (reason, detail, code), _ = self.dispatch()
+        self.assertEqual(reason, "no_outcome")
+        self.assertEqual(code, 1)
+        self.assertIn("boom", detail)
+
+    def test_a_recipe_that_floods_stderr_does_not_deadlock_the_run(self):
+        # Draining stdout to the end while stderr fills its own pipe buffer
+        # hangs both processes, and a --loop run failing that way hangs
+        # silently. The thread here turns a regression into a failure rather
+        # than a suite that never finishes.
+        self.fake_recipe(
+            'sys.stderr.write("x" * 400000)\n'
+            'print(\'{"done": "target_reached"}\')\n'
+            "sys.exit(0)\n"
+        )
+        result = []
+        worker = threading.Thread(target=lambda: result.append(self.dispatch()))
+        worker.daemon = True
+        worker.start()
+        worker.join(60)
+        self.assertFalse(worker.is_alive(), "run_recipe deadlocked on a full stderr")
+        self.assertEqual(result[0][0][0], "target_reached")
+
+    def test_an_outcome_written_this_cycle_is_a_fact_the_next_one_reads(self):
+        self.mind.record_fact(
+            self.memory,
+            {
+                "t": 950.0,
+                "character": "demo",
+                "recipe": "train",
+                "reason": "low_hp",
+                "ok": False,
+            },
+        )
+        self.mind.record_fact(
+            self.memory,
+            {
+                "t": 999.0,
+                "character": "someone_else",
+                "recipe": "train",
+                "reason": "low_hp",
+                "ok": False,
+            },
+        )
+        facts = self.mind.load_facts(self.memory, "demo")
+        self.assertEqual(len(facts), 1)
+        beliefs = self.beliefs(self.world(), facts=facts, now=1000.0)
+        self.assertTrue(beliefs.failed_recently("train", "low_hp", 100))
+
+    def test_a_memory_file_with_a_torn_line_still_reads_the_rest(self):
+        with open(self.memory, "w") as handle:
+            handle.write('{"t": 1, "character": "demo", "reason": "a"}\n')
+            handle.write("{not json\n\n")
+            handle.write('{"t": 2, "character": "demo", "reason": "b"}\n')
+        self.assertEqual(len(self.mind.load_facts(self.memory, "demo")), 2)
+
+    def looping_mind(self, outcome, *extra: str):
+        """A --loop run whose every cycle dispatches to a fixed outcome."""
+        self.mind.run_recipe = lambda character, call: outcome
+        return self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+            "--loop",
+            *extra,
+        )
+
+    def test_the_same_outcome_over_and_over_is_a_stall_not_a_routine(self):
+        # A character alternating two ordinary-looking stops ran 267 cycles
+        # doing nothing; each round on its own looked fine.
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.looping_mind(("no_target", "nothing in range", 2), "--patience", "3")
+        self.assertEqual(caught.exception.reason, "stalled")
+        self.assertIn("3 cycles", caught.exception.detail)
+        self.assertEqual(len(self.mind.load_facts(self.memory, "demo")), 3)
+
+    def test_a_loop_stops_at_max_cycles_when_nothing_else_stops_it(self):
+        outcomes = [("a", "", 0), ("b", "", 0), ("c", "", 0)]
+        self.mind.run_recipe = lambda character, call: outcomes.pop(0)
+        (outcome, _, code), _ = self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+            "--loop",
+            "--max-cycles",
+            "3",
+        )
+        self.assertEqual((outcome, code), ("max_cycles", 2))
+        self.assertEqual(outcomes, [])
+
+    def test_a_stop_file_ends_a_loop_gracefully(self):
+        stop = os.path.join(self.home, "stop")
+        with open(stop, "w") as handle:
+            handle.write("")
+        (outcome, _, code), lines = self.looping_mind(("a", "", 0), "--stop-file", stop)
+        self.assertEqual((outcome, code), ("stop_file", 0))
+        self.assertEqual(lines, [])
+
+    def test_a_step_reporting_death_halts_the_run_it_does_not_retry(self):
+        with self.assertRaises(self.mind.Stop) as caught:
+            self.looping_mind(("died", "lost the lot", 2))
+        self.assertEqual(caught.exception.reason, "died")
+
+    def test_a_single_cycle_exits_with_the_recipe_s_own_status(self):
+        self.mind.run_recipe = lambda character, call: ("out_of_runes", "", 2)
+        (outcome, _, code), _ = self.run_mind(
+            {"rules": [{"name": "r", "when": "", "then": {"recipe": "train"}}]},
+            self.world(),
+        )
+        self.assertEqual((outcome, code), ("out_of_runes", 2))
 
     def test_a_mind_file_needs_a_character_like_every_other_recipe(self):
         done = subprocess.run(
