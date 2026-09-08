@@ -3,3 +3,4 @@ __pycache__/
 .DS_Store
 .test-home/
 .ruff_cache/
+recipes/routes.json.lock
