@@ -150,21 +150,36 @@ doubt is the thing that matters: the curve is far flatter than the 13,034,431
 of the standard table, so a goal sized against that table is overstated by
 something between 5× and 14×.
 
-## Dropped items despawn
+## A dropped item is private to the dropper at first
 
-An item left on the floor is gone after a while: a cache of 10 Mind runes
-dropped at (3222,3297) for a later pickup was simply not there when the
-recipient arrived. The runes were real and the drop succeeded — the despawn is
-a world mechanic, not a routing failure or a hallucinated drop.
+This one masquerades as a despawn, and getting it wrong makes the simplest
+handoff in the game look broken.
 
-That makes a drop-and-walk-away relay unsafe for anything valuable, and it is
-why `deliver.py` + `collect.py` only work when the pickup is *immediate* — the
-recipient already standing there, its own `collect.py` polling. For anything
-else, use `recipes/trade.py`, which never puts the goods on the floor.
+An item you drop is **visible only to you for roughly a minute**, and only then
+becomes public. Observed directly: a character dropped 32 coins and, standing
+on the same tile, the intended recipient's `groundItems` was **empty** while
+the dropper's showed the coins exactly where they fell. Neither had moved and
+nothing had despawned.
 
-Two characters idling in different places waiting to meet is the worst case:
-the giver drops, walks off, and the cargo evaporates while both logs report
-success.
+So a receiver that polls briefly and gives up concludes the drop failed, and a
+receiver that waits ~60s picks the items straight up. The same handoff failed
+at 30 polling rounds and succeeded at 90, with no other change. An earlier
+report of 10 Mind runes "despawning" between drop and pickup is best read this
+way too.
+
+What that means in practice:
+
+- **`deliver.py` + `collect.py` do work**, including for valuables — give
+  `collect.py` a `--max-wait` that comfortably outlasts the private window.
+  Its default of 30 rounds is not enough on its own.
+- Items *do* also despawn eventually, so this is not licence for a
+  drop-and-walk-away relay; it just means "the recipient cannot see it yet" is
+  the far more common explanation, and the fix is patience rather than a
+  different mechanism.
+- `recipes/trade.py` remains the right tool when the two are together and the
+  goods are valuable, since it never puts anything on the floor — but it is
+  zone-gated (below) and a drop is not, which makes drop+wait+pickup the only
+  option in places a trade is refused.
 
 ## Death
 
@@ -266,9 +281,15 @@ Two limits and one procedure, all learned the hard way:
   member and started a fight with a stranger on the next tile. Send one index,
   read the resulting game message, and correct from there.
 
-- Trading is zone-gated. Out at the farm it answers "You can't do that here",
-  even standing on the adjacent tile. Open town ground works; fenced or
-  wilderness-ish pockets do not.
+- Trading is zone-gated, and the refusal is easy to misdiagnose. Out at the
+  farm, and at the Al Kharid border gate, it answers **"You can't do that
+  here"** even with both characters on the same tile. Crucially the game
+  message reads `Sending trade offer...` immediately before it — so the option
+  index was *right* and the location was wrong. A recipe watching only
+  `modalInterface` cannot tell that apart from a wrong index, and will report
+  "no trade option" while the real problem is where they are standing. Read
+  `state messages` before believing the index was wrong. Open town ground
+  works; fenced pockets, and the border corridor around x 3260-3276, do not.
 - **An offer needs a component click, and the trade runs over two screens.**
   Both sides accepting once is not the end of it: the first accept opens a
   second *confirm* screen, and a trade abandoned there moves nothing while
