@@ -209,6 +209,39 @@ the dialogue through; `recipes/shop.py --dialog-choice` does that.
 The same shape is likely for other dialogue-gated shops, so treat "no Trade
 option" as "probably still a shop" rather than as a negative result.
 
+### Aubury's Rune Shop, confirmed live
+
+The only rune source found anywhere so far. **NPC "Aubury" at (3252, 3404)**,
+saved in `routes.json` as the `rune_shop` landmark.
+
+Opening it: `interactNpc` with **Talk-to**, then `clickDialogOption` on
+**"Yes please!"** (which came back as `optionIndex` 1). Then `state shop`
+reports the shelves:
+
+| stock | price |
+| --- | --- |
+| Mind rune | **3 gp** |
+| Air, Water, Earth, Fire, Body rune | **4 gp** |
+| Chaos rune | (stocked, unpriced here) |
+| Death rune | (stocked, unpriced here) |
+
+Those prices are cheaper than the emulator's own config suggests, so read them
+off `state shop` rather than trusting a table. At 3+4 gp, a Wind Strike cast
+costs **7 gp** in runes, which is what makes a long Magic goal a budgeting
+problem rather than an impossible one.
+
+**`shopBuy` caps at about 10 units per call.** One call asking for 116 Air
+runes returned `success: true`, logged the request, and delivered **10**. So
+bulk buying is a loop, and — as everywhere else here — the request is not the
+receipt: count the inventory before and after. A run that trusted the reported
+amount would have recorded 257 runes bought while holding 20.
+
+**Buy a spell's runes in ratio, not one shelf at a time.** Working through the
+shelves in order spent an entire 406-coin budget on Air runes and left the
+caster holding 90 Air and 10 Mind. Wind Strike needs one of each, so that
+stock was worth 10 casts, not 100. `shop.py` now buys round-robin across the
+matching shelves for this reason.
+
 Do not look for one with `scanNearbyLocs` on "shop" or "store". A shop is the
 merchant, not the building: a radius-25 scan from a tile in Lumbridge matched
 0 of 147 nearby locs, in an area that has a shop in it. Scan the NPCs and
