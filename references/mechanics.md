@@ -172,11 +172,12 @@ The sequence, with the component ids from the pinned content:
 4. Both send `clickComponent` 3546 to confirm. Only now does the item leave
    one inventory and arrive in the other.
 
-This is verified end to end by `scripts/verify-trade.ts` in the world repo,
-which asserts the item moves both ways and that both character `.sav` files
-are rewritten within seconds of the exchange (ADR 0014). It has not yet been
-re-run through this CLI, so read the receiving inventory back before telling
-an owner a transfer is done.
+Verified on 2026-09-09 through this CLI, against a local world, by
+`scripts/verify-trade.ts` in the world repo: the item left one inventory,
+arrived in the other, and both character `.sav` files were rewritten together
+within seconds (ADR 0014). Still read the receiving inventory back before
+telling an owner a transfer is done — a wrong-but-valid `optionIndex` on step
+1 opens something other than a trade and every dispatch still says success.
 
 ## Discovering other characters
 
