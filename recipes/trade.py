@@ -60,7 +60,6 @@ and 1 for a usage or world error.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 
@@ -102,6 +101,7 @@ def matching_slots(state: dict, wanted: list) -> list:
         if item_id in ids or any(n in item_name for n in names):
             rows.append(item)
     return rows
+
 
 MAIN_SCREEN = 3323
 OFFER_COMPONENT = 3322
@@ -276,8 +276,7 @@ def run(args) -> str:
                 # on the confirm screen leaves behind, and it moves nothing.
                 after = counts(fresh, args.expect)
                 gained = {
-                    k: after.get(k, 0) - expected_before.get(k, 0)
-                    for k in args.expect
+                    k: after.get(k, 0) - expected_before.get(k, 0) for k in args.expect
                 }
                 if any(v > 0 for v in gained.values()):
                     emit({"received": gained})
