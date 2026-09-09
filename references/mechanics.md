@@ -143,7 +143,7 @@ already found is a destination to travel to, not something to rediscover.
 `interactPlayer` opens a trade, and `state trade` reports `isOpen`, `screen`,
 `partner`, `myOffer`, `theirOffer` and both accept flags.
 
-Three limits, all learned the hard way:
+Two limits and one procedure, all learned the hard way:
 
 - **Nearby players carry no option list**, unlike NPCs and locations, so the
   right `optionIndex` cannot be read out of state and the CLI cannot echo the
@@ -154,12 +154,29 @@ Three limits, all learned the hard way:
 - Trading is zone-gated. Out at the farm it answers "You can't do that here",
   even standing on the adjacent tile. Open town ground works; fenced or
   wilderness-ish pockets do not.
-- **Putting items into the offer is unconfirmed.** Across roughly forty
-  attempts by two characters the handshake completed — both sides accepted —
-  with `myOffer` and `theirOffer` still empty and nothing transferred.
-  `clickComponentWithOption` on the trade interface is the open lead. Do not
-  promise an owner a transfer that has never been observed to work; move gold
-  or items some other way, or report the limitation.
+- **An offer needs a component click, and the trade runs over two screens.**
+  Both sides accepting once is not the end of it: the first accept opens a
+  second *confirm* screen, and a trade abandoned there moves nothing while
+  every dispatch still reports success. That is what the earlier forty-odd
+  attempts were hitting — the offer was never placed and the confirm was
+  never sent, so `myOffer` and `theirOffer` stayed empty.
+
+The sequence, with the component ids from the pinned content:
+
+1. `interactPlayer` with the trade option from both sides. Each waits for
+   `modalInterface` 3323, the main trade screen.
+2. The giver places a stack: `clickComponentWithOption` on component 3322,
+   the trade-side inventory, with `optionIndex` 1 and the inventory `slot`.
+3. Both send `clickComponent` 3420 to accept, then wait for `modalInterface`
+   3443, the confirm screen.
+4. Both send `clickComponent` 3546 to confirm. Only now does the item leave
+   one inventory and arrive in the other.
+
+This is verified end to end by `scripts/verify-trade.ts` in the world repo,
+which asserts the item moves both ways and that both character `.sav` files
+are rewritten within seconds of the exchange (ADR 0014). It has not yet been
+re-run through this CLI, so read the receiving inventory back before telling
+an owner a transfer is done.
 
 ## Discovering other characters
 
