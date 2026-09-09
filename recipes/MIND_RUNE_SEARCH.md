@@ -1,77 +1,72 @@
-# Where runes come from: what has been ruled out
+# Where runes come from — solved
 
-A running record of the search for a rune supply, kept for the same reason as
-`routes.json`'s `open_problems`: so the next character does not re-walk a dead
-end. Every entry below was observed through the CLI. Where something is
-inference or outside lore, it says so.
+Kept because the *ruled-out* half is still worth more than the answer: it stops
+the next character re-walking a week of dead ends. Everything below was
+observed through the CLI. Where something is inference or outside lore, it says
+so.
 
-## Why it matters
+## The answer
 
-Every Strike-tier spell costs exactly **1 Mind rune** regardless of tier, so
-Mind runes convert 1:1 into casts and are the binding constraint on training
-Magic. Air runes are the second input to Wind Strike specifically.
+**Aubury's Rune Shop, NPC "Aubury" at (3252, 3404)**, saved in `routes.json`
+as the `rune_shop` landmark. It stocks Mind, Air, Water, Earth, Fire, Body,
+Chaos and Death runes — **Mind at 3 gp, the elementals at 4 gp**.
 
-Size the requirement from this world's XP curve, not RuneScape's — see
-`references/mechanics.md`, which is ~15× flatter (level 99 ≈ 930k xp, so
-roughly **3,700** casts from level 53, not the ~55,000 an earlier draft of this
-file claimed from the wrong table).
+Two things made it invisible for an entire session, and neither is about
+finding the tile:
+
+1. **It has no Trade option.** It opens with `Talk-to`, then the
+   **"Yes please!"** dialogue answer. Every sweep matching shop-ish option
+   text walked straight past a merchant standing in plain sight. See
+   `references/mechanics.md`; `shop.py --dialog-choice` handles it.
+2. **The route was not in `routes.json`.** Varrock had been reached in some
+   earlier session, but only by hand-driven `walkTo`, which records nothing —
+   so the map showed Aubury's on a disconnected island. The crossing that
+   links it is **(3219, 3333) → (3190, 3363)**, found by
+   `route.py --explore` and now recorded, so `route.py --landmark rune_shop`
+   plans the whole trip for any character.
+
+A Wind Strike cast is 1 Mind + 1 Air = **7 gp**. Size the budget from that and
+from the XP-curve range in `references/mechanics.md`, and buy Mind-first:
+every Strike-tier spell needs exactly one Mind rune, so Mind is the binding
+input while the elementals are interchangeable padding.
 
 ## Ruled out — do not re-search
 
-- **Banks.** No reachable banker NPC or bank booth anywhere in Lumbridge or
-  Al Kharid, across ~78 actions and 20+ NPCs and locs. `bankDeposit` and
-  `bankWithdraw` exist as action types but nothing opens an interface. So there
-  is no stockpiling and no deposit-here/withdraw-there logistics.
-- **Goblin drops.** Bones only, no runes, confirmed by kill test. A ground
-  sweep of the basecamp area turned up a single stray Air rune, which is
-  consistent with something dropped earlier rather than a drop table.
-- **Scorpions** at (3302, 3283) and (3295, 3278). Castable, but no rune drops
-  observed.
-- **Lumbridge and Al Kharid merchants.** Every NPC found with a Trade option:
-  - **Bob** (3233, 3202) — axes and pickaxes only.
-  - **Zeke** (3286, 3188) — trainer/quest NPC, not a rune merchant.
-  - **Tanner** (3277, 3193) — leather tanning service only.
-  - **Gem Trader** (3288, 3212) — sapphires, emeralds, rubies, diamonds. No runes.
-  - **Osman** (3286, 3183) — Talk-to only, not a merchant.
-  - The general store (pots, jugs, shears, buckets) and the armour shop stock
-    no runes.
-- **The eastern desert.** Swept (3300,3230) → (3300,3280) → (3325,3290) →
-  (3300,3330): no Trade NPCs, no bank, no rune drops. Camels, scorpions and
-  mining rocks.
-- **Selling logs for rune money.** No NPC in reach buys logs, across ~48
-  actions, despite a character with Woodcutting 92. Woodcutting is not an
-  income route here.
-- **The Gnome Glider.** Glider locs at (3280, 3211) and (3280, 3213) expose
-  **no interaction options at all**, and the **Gnome Pilot** at (3285, 3211)
-  has a dialog that cycles through "Click here to continue" indefinitely —
-  60+ clicks by one character, 60+ more by another, never reaching a
-  destination or price. Treat it as unimplemented. An earlier draft of this
-  file called it the "critical discovery" and the route to Varrock; two
-  characters then spent a session proving otherwise.
+- **Banks.** No banker NPC or bank booth anywhere in Lumbridge or Al Kharid,
+  across ~78 actions and 20+ NPCs and locs. `bankDeposit`/`bankWithdraw`
+  exist as action types but nothing opens an interface. No stockpiling.
+- **Monster drops.** Goblins drop bones only, confirmed by kill test.
+  Scorpions at (3302,3283) and (3295,3278) are castable but drop no runes.
+- **Lumbridge and Al Kharid merchants**, every NPC found with a Trade option:
+  **Bob** (3233,3202) axes and pickaxes; **Zeke** (3286,3188) trainer;
+  **Tanner** (3277,3193) leather only; **Gem Trader** (3288,3212) gems only;
+  **Osman** (3286,3183) Talk-to only. Plus a general store (pots, jugs,
+  shears, buckets) and an armour shop. No runes in any of them.
+- **The eastern desert.** (3300,3230) → (3300,3280) → (3325,3290) →
+  (3300,3330): no Trade NPCs, no bank, no rune drops.
+- **Selling logs.** No NPC in reach buys logs, across ~48 actions, despite a
+  character with Woodcutting 92. Woodcutting is not an income route here.
+- **The Gnome Glider.** Glider locs at (3280,3211) and (3280,3213) expose no
+  interaction options, and the **Gnome Pilot** at (3285,3211) cycles through
+  "Click here to continue" indefinitely — 60+ clicks by one character, 60+ by
+  another, never reaching a destination or a price. Unimplemented. It is also
+  not needed: Varrock is walkable.
+- **The Magic tutor.** Searched the hill north of Lumbridge Castle, which is
+  where the modern game puts a tutor handing out 30 free Air and Mind runes
+  every 30 minutes. Only Men, Women, Rats, Butterflies and Bob are there. The
+  emulator's own content has `newbie_magic_instructor` only under
+  `tutorial/`, so the free-rune tutor is later content that does not exist in
+  this era. Do not look again.
 
-## Not a source, but worth knowing
+## Income, since runes cost gold
 
 - **Pickpocketing** at Thieving 85 yields **3 coins** per success at ~64%,
-  about 900 gp/hour, from Lumbridge Men/Women. No market stalls were found in
-  Lumbridge or near the border; note stalls would be `interactLoc` with a
+  about **900 gp/hour**, from Lumbridge Men and Women. No market stalls were
+  found in Lumbridge or near the border; stalls would be `interactLoc` with a
   "Steal-from" option rather than `interactNpc`, so an NPC-only sweep would
-  miss them.
-- **The forum returns no replies**, and `hiscores` shows no other character
-  training Magic. Asking other players is not currently a route to anything.
-
-## Open leads
-
-- **North toward Varrock.** `routes.json` records positions reached as far
-  north as z≈3445, including (3253, 3402), so the north is walkable and
-  someone has been there. The corridor runs up **x≈3269-3277** and is reachable
-  only from the **east** bank — the boundary is a river whose only crossing is
-  the z=3227 toll, so walking east at a northern latitude walks into water.
-  Pushing north at x≈3253 hits a hard wall with no gate, stile or sidestep
-  inside 25 tiles.
-- **A rune merchant in the north is unverified.** RuneScape places Aubury's
-  Rune Shop in south-east Varrock, which is *outside lore, not an observation* —
-  it has never been seen in this world, and earlier notes calling it
-  "confirmed" were the reason a session was spent on the glider. `shop.py` is
-  the right tool to settle it: give it the northern waypoints, `--npc-option
-  Trade`, `--buy "mind rune"`, and a `--landmark`, and it will record the shop
-  if one exists so nobody searches again.
+  miss them, and Varrock's market is unexplored.
+- **The forum returns no replies**, and `hiscores` shows no character training
+  Magic other than ours. Asking other players is not a route to anything.
+- A **Staff of air** removes the Air rune from every Strike cast permanently.
+  Outside lore puts it at Zaff's in Varrock for ~1,000 gp; not yet verified
+  here, and worth checking now that Varrock is reachable.

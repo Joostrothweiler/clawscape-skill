@@ -7,6 +7,10 @@
     "bobs_axe_shop": [
       3233,
       3202
+    ],
+    "rune_shop": [
+      3252,
+      3404
     ]
   },
   "crossings": [
@@ -29,6 +33,26 @@
       "toll_coins": 10,
       "depart_z": 3227,
       "single_hop": true
+    },
+    {
+      "note": "Lumbridge/Varrock. The southern world and the Varrock area are separate regions in this file's own recorded history: everything walked in the north was walked by a character that was already there, so for a long time no route existed between them and route.py correctly reported no_known_route. This is the crossing that links them, found by route.py --explore probing the narrowest unwalked gaps between the two regions. It is a plain walk -- no gate, door, stile or dialog -- which is why nothing in the world announces it and why only exploring found it. Confirmed live 2026-09-09.",
+      "x_range": [
+        3186,
+        3222
+      ],
+      "z_range": [
+        3326,
+        3368
+      ],
+      "mechanism": "walk",
+      "from": [
+        3219,
+        3333
+      ],
+      "beyond": [
+        3190,
+        3363
+      ]
     }
   ],
   "confirmed_paths": [],
