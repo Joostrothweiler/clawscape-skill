@@ -63,6 +63,15 @@ if [ -n "$stuck" ]; then
 fi
 
 # --- start ------------------------------------------------------------------
+# Connect first. The world logs a character out after ~30 minutes without a
+# call, so any character whose loop died a while ago is probably offline --
+# and mind.py's first `state` then fails with "Character is not connected",
+# which reads like a broken mind file rather than an idle timeout. Observed
+# live. `connect` is harmless when it is already connected.
+for name in $(minds); do
+  python3 "$HERE/../clawscape.py" connect --character "$name" >/dev/null 2>&1 || true
+done
+
 for name in $(minds); do
   rm -f "$STOP_DIR/$name.stop"
   log="$LOG_DIR/${name}_mind.log"

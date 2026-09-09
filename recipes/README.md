@@ -9,6 +9,7 @@ configure.
 | --- | --- |
 | [`train.py`](train.py) | Repeats one interaction until a skill reaches a level, clearing level-up dialogs and stopping on death, low HP, a full inventory or a stall. |
 | [`travel.py`](travel.py) | Walks further than one `walkTo` call safely handles, hopping in small steps and crossing whatever blocks the way (a Gate, a Stile, a dialog-gated border) instead of stopping at the first silent non-move. |
+| [`trade.py`](trade.py) | Moves items between two characters through the real trade interface, run on both sides at once. Gates every step on `modalInterface` and proves the transfer from an inventory delta, because each screen reports success whether or not anything moved. Use it instead of a drop relay for anything valuable — dropped items despawn. |
 | [`mind.py`](mind.py) | Runs a character from a [mind file](minds/) — goals that drop themselves when their condition holds, and rules that pick the next recipe from the situation rather than from a fixed order. Records every stop reason as a fact the next cycle can ask about. |
 
 ```sh

@@ -131,11 +131,40 @@ from 22 observed (level, experience) pairs across five characters:
 | 53 | 40,650 | 92 | 622,125 |
 
 Marginal cost runs ~550 xp/level at level 30, ~2,500 at level 50 and ~33,000 at
-level 90, growing roughly 1.07× per level. Extrapolating gives **level 99 ≈
-930,000 xp**, not 13.0M. Before sizing any long grind, read two real
-`(level, experience)` pairs off live characters and fit the gap rather than
-reaching for a remembered table — and treat the ~930k figure as an estimate
-(±~15%) until someone actually gets there.
+level 90. Before sizing any long grind, read two real `(level, experience)`
+pairs off live characters and fit the gap rather than reaching for a remembered
+table.
+
+**The top of that curve is genuinely unresolved, so do not plan tightly on
+it.** Fitting an average 1.07×-per-level growth over the observed L51-88 band
+extrapolates to **level 99 ≈ 930,000 xp**. But growth is not constant, and
+applying RuneScape's steeper high-level rate (~1.10×) to the highest directly
+observed point (L92 = 622,125) gives **≈1.25M** instead. Separately, the
+`rs-sdk` emulator this world resembles — a LostCity/2004scape fork, also with
+an accelerated curve — reports level 99 at **2,487,812 xp**, which is a
+different config but ~2.7× the low estimate.
+
+So the honest range for level 99 here is roughly **0.9M-2.5M xp**, and the only
+way to close it is to observe a level past 92 in this world. What is *not* in
+doubt is the thing that matters: the curve is far flatter than the 13,034,431
+of the standard table, so a goal sized against that table is overstated by
+something between 5× and 14×.
+
+## Dropped items despawn
+
+An item left on the floor is gone after a while: a cache of 10 Mind runes
+dropped at (3222,3297) for a later pickup was simply not there when the
+recipient arrived. The runes were real and the drop succeeded — the despawn is
+a world mechanic, not a routing failure or a hallucinated drop.
+
+That makes a drop-and-walk-away relay unsafe for anything valuable, and it is
+why `deliver.py` + `collect.py` only work when the pickup is *immediate* — the
+recipient already standing there, its own `collect.py` polling. For anything
+else, use `recipes/trade.py`, which never puts the goods on the floor.
+
+Two characters idling in different places waiting to meet is the worst case:
+the giver drops, walks off, and the cargo evaporates while both logs report
+success.
 
 ## Death
 
@@ -167,6 +196,18 @@ already on the shop's shelves is a safe guide to what it buys.
 There is no merchant directory or NPC search across the map: `state npcs
 --name bob` only matches NPCs already in the scene. Finding a shop means
 exploring, or asking on the forum.
+
+**Not every shop has a shop-ish option, so a sweep that matches option text
+walks past them.** Some are opened by `Talk-to` and then a *dialogue choice*.
+**Aubury's Rune Shop has no Trade option at all**: it is Talk-to, then the
+"Yes please!" answer, and only then does `state shop` fill in. Every rune-shop
+search in one long session came back empty for this reason alone, including
+runs that had walked to the right tile — the NPC was standing there with a
+menu that said nothing about trading. So match `Talk-to` as well, and click
+the dialogue through; `recipes/shop.py --dialog-choice` does that.
+
+The same shape is likely for other dialogue-gated shops, so treat "no Trade
+option" as "probably still a shop" rather than as a negative result.
 
 Do not look for one with `scanNearbyLocs` on "shop" or "store". A shop is the
 merchant, not the building: a radius-25 scan from a tile in Lumbridge matched
@@ -219,6 +260,21 @@ arrived in the other, and both character `.sav` files were rewritten together
 within seconds (ADR 0014). Still read the receiving inventory back before
 telling an owner a transfer is done — a wrong-but-valid `optionIndex` on step
 1 opens something other than a trade and every dispatch still says success.
+
+**`recipes/trade.py` implements all of this, and it is verified working** — run
+it on both sides at once, `--give` on the giver only. One action runs per
+character so one process cannot drive both halves, and it does not need to:
+the trade screen is itself the synchronisation channel, so each side reads
+`state trade` and does the single next thing it owes the exchange.
+
+**The offer step has its own option menu, and the wrong index quietly
+half-works.** `clickComponentWithOption` on 3322 takes an `optionIndex` from
+*that component's* menu, and it is not the same numbering as anything else:
+**1 offers ONE item, 4 offers the WHOLE stack**, both confirmed live. The
+first working run of the sequence used 1, moved **a single coin out of 435**,
+and reported a completely clean trade at every step. So `--offer-option`
+defaults to 4, and the amount actually transferred is worth reading back even
+once the protocol is right.
 
 **Check `modalInterface` before trusting step 1, or the other three steps are
 aimed at nothing.** The sequence above is right, and the way to get it wrong is
