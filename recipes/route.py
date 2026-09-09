@@ -140,6 +140,72 @@ def build_graph(routes: dict) -> dict:
     return graph
 
 
+def components(graph: dict) -> list:
+    """Groups of tiles mutually reachable through recorded hops, largest first.
+
+    More than one component is the normal state of this file, not a defect:
+    it means parts of the world have been walked but never walked *between*.
+    """
+    linked: dict = collections.defaultdict(set)
+    for node, neighbours in graph.items():
+        for other in neighbours:
+            linked[node].add(other)
+            linked[other].add(node)
+    seen, groups = set(), []
+    for node in linked:
+        if node in seen:
+            continue
+        stack, group = [node], set()
+        while stack:
+            current = stack.pop()
+            if current in group:
+                continue
+            group.add(current)
+            seen.add(current)
+            stack.extend(linked[current] - group)
+        groups.append(group)
+    return sorted(groups, key=len, reverse=True)
+
+
+def frontiers(here_group: set, there_group: set, limit: int):
+    """The narrowest unwalked gaps between two components, closest first.
+
+    A gap is a pair of tiles -- one on each side -- that nothing has ever
+    walked between. Probing the shortest ones first is the cheapest way to
+    find the crossing that must exist, since a character reached the far side
+    somehow.
+    """
+    gaps = []
+    for a in here_group:
+        for b in there_group:
+            span = max(abs(a[0] - b[0]), abs(a[1] - b[1]))
+            if span <= limit:
+                gaps.append((span, a, b))
+    gaps.sort()
+    # Diversify BOTH sides. Several gaps sharing a launch point are the same
+    # attempt at the same wall, and -- less obviously -- so are several
+    # sharing a *destination*: the first run of this picked four gaps of span
+    # 27-29 that were four launch points aimed at the single tile
+    # (3239,3384), so all four probed one boundary and the genuinely
+    # different crossings 3 tiles further out were never tried. Tiles within
+    # `CLUSTER` of an already-picked one count as the same place.
+    CLUSTER = 6
+    picked, near_used, far_used = [], [], []
+
+    def far_from(tile, used):
+        return all(
+            max(abs(tile[0] - u[0]), abs(tile[1] - u[1])) > CLUSTER for u in used
+        )
+
+    for span, a, b in gaps:
+        if not far_from(a, near_used) or not far_from(b, far_used):
+            continue
+        near_used.append(a)
+        far_used.append(b)
+        picked.append((span, a, b))
+    return picked
+
+
 def nearest(graph: dict, target: tuple, limit: int = 60):
     """The known tile closest to `target`, if one is close enough to be useful."""
     best, best_gap = None, None
@@ -268,11 +334,14 @@ def run(args) -> str:
 
     chain = shortest(graph, start, finish)
     if chain is None:
-        raise Stop(
-            "no_known_route",
-            "%s and %s are both on the map but not connected by any recorded "
-            "hop; the connecting stretch has never been walked" % (here, target),
-        )
+        if not args.explore:
+            raise Stop(
+                "no_known_route",
+                "%s and %s are both on the map but not connected by any "
+                "recorded hop; the connecting stretch has never been walked. "
+                "Re-run with --explore N to probe the narrowest gaps." % (here, target),
+            )
+        return explore(args, graph, start, finish)
 
     waypoints = thin(chain, args.stride)
     if waypoints and waypoints[-1] != target:
@@ -308,6 +377,61 @@ def run(args) -> str:
     )
 
 
+def explore(args, graph: dict, start: tuple, finish: tuple) -> str:
+    """Probe the narrowest unwalked gaps toward a component we cannot reach.
+
+    Called when the two ends are both on the map but nothing has walked
+    between them. Every probe teaches the file something whichever way it
+    goes: travel.py files a crossing under confirmed_paths, or the wall under
+    open_problems, so a later run either has a route or stops re-probing a
+    dead end. This is the loop that would otherwise be run by hand, one gap
+    at a time, by whoever is watching.
+    """
+    groups = components(graph)
+    here_group = next((g for g in groups if start in g), set())
+    there_group = next((g for g in groups if finish in g), set())
+    gaps = frontiers(here_group, there_group, args.gap_limit)[: args.explore]
+    if not gaps:
+        raise Stop(
+            "no_frontier",
+            "no pair of tiles within %d links the two regions, so there is "
+            "nothing cheap to probe; explore toward %s with travel.py"
+            % (args.gap_limit, finish),
+        )
+    emit(
+        {
+            "exploring": len(gaps),
+            "regions": {"here": len(here_group), "there": len(there_group)},
+            "gaps": [{"span": s, "from": list(a), "to": list(b)} for s, a, b in gaps],
+        }
+    )
+    for index, (span, near_side, far_side) in enumerate(gaps, 1):
+        emit({"probe": index, "span": span, "staging": list(near_side)})
+        chain = shortest(graph, start, near_side)
+        if chain is None:
+            emit({"probe_skipped": index, "why": "cannot reach the near side"})
+            continue
+        for x, z in thin(chain, args.stride):
+            outcome, _ = walk_leg(args, x, z)
+            if outcome in ("died", "low_hp"):
+                raise Stop(outcome, "stopped staging for probe %d" % index)
+        emit({"probe": index, "attempting": list(far_side)})
+        outcome, _ = walk_leg(args, far_side[0], far_side[1])
+        if outcome == "arrived":
+            emit({"crossed": {"from": list(near_side), "to": list(far_side)}})
+            return "crossed"
+        if outcome in ("died", "low_hp"):
+            raise Stop(outcome, "stopped probing gap %d" % index)
+        # travel.py has just filed this wall under open_problems, so the next
+        # run will not pick the same launch point again.
+        start = near_side
+    raise Stop(
+        "frontier_holds",
+        "probed %d gap(s) and none crossed; each is now recorded, so a later "
+        "run will try different ones" % len(gaps),
+    )
+
+
 def parse(argv) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Walk somewhere far by planning over tiles already walked."
@@ -329,6 +453,21 @@ def parse(argv) -> argparse.Namespace:
         type=int,
         default=6,
         help="Tiles from the destination that still counts as arrived",
+    )
+    parser.add_argument(
+        "--explore",
+        type=int,
+        default=0,
+        help="When the destination is on the map but unreachable, probe this "
+        "many of the narrowest unwalked gaps toward it. Each probe teaches "
+        "routes.json either a crossing or a wall, so repeated runs converge "
+        "instead of re-trying the same spot.",
+    )
+    parser.add_argument(
+        "--gap-limit",
+        type=int,
+        default=45,
+        help="Widest unwalked gap worth probing, in tiles (default 45)",
     )
     parser.add_argument("--patience", type=int, default=12)
     parser.add_argument("--probe-radius", type=int, default=25)
