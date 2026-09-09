@@ -1,16 +1,34 @@
 {
   "landmarks": {
-    "lumbridge_courtyard": [3222, 3218],
-    "bobs_axe_shop": [3233, 3202]
+    "lumbridge_courtyard": [
+      3222,
+      3218
+    ],
+    "bobs_axe_shop": [
+      3233,
+      3202
+    ]
   },
   "crossings": [
     {
-      "note": "Al Kharid / Lumbridge river boundary. Its two Gate locs are decorative -- opening them does nothing. walkTo across x=3268 is client_rejected from every tile tried until the toll dialog below is completed, at which point the same walk succeeds instantly. Confirmed live 2026-09-08.",
-      "x_range": [3260, 3276],
-      "z_range": [3150, 3260],
+      "note": "Al Kharid / Lumbridge river boundary, and the only crossing on it. Its two Gate locs are decorative -- opening them does nothing. walkTo across x=3268 is client_rejected from every tile tried until the toll dialog below is completed, at which point the same walk succeeds instantly. Confirmed live 2026-09-08. Three details each cost a session: (1) it is a TOLL costing 10 coins -- a character with an empty purse completes the whole dialog and is still refused, with no message saying why, which reads exactly like a hard block; (2) it works only from z=3227 -- all confirmed crossings depart (3264-3267, 3227) and land (3273, 3227), while z=3228 has none, so being one tile off looks like a wall; (3) the crossing hop is 6-9 tiles, longer than walkTo's ~7-8 cap, because it behaves like a dialog-gated teleport -- send ONE direct walkTo to 'beyond' rather than hopping. Because the boundary is a river, a character on the west bank north of z~3240 cannot reach the eastern corridor (x~3269-3277) by walking east at its own latitude; it is walking into water and reports 'moving but not closing on the target'. Go south to z=3227, cross, then north.",
+      "x_range": [
+        3260,
+        3276
+      ],
+      "z_range": [
+        3150,
+        3260
+      ],
       "mechanism": "dialog",
       "npc": "Border Guard",
-      "beyond": [3273, 3227]
+      "beyond": [
+        3273,
+        3227
+      ],
+      "toll_coins": 10,
+      "depart_z": 3227,
+      "single_hop": true
     }
   ],
   "confirmed_paths": [],

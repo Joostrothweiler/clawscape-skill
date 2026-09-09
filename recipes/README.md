@@ -62,6 +62,64 @@ beliefs, goals and rules:
 once a character's routine has settled into something that has to react —
 a single recipe is still the right answer to a goal that is only a loop.
 
+### The catch-all must be an action, never a wait
+
+This is the one mistake that quietly wastes a whole run, and it is worth
+stating on its own because the engine cannot catch it: **a mind whose
+catch-all rule does nothing will do nothing, forever, and report success
+every cycle while it happens.**
+
+A live mind file for a character training Magic used "check chat for a
+resupply hint" as its catch-all. Over one run it chose rules like this:
+
+| times chosen | rule | outcome |
+| --- | --- | --- |
+| 6,877 | `wait_for_a_hint` | `no_hint` ×6,874 |
+| 78 | `sweep_the_ground` | collected |
+| 77 | `return_to_basecamp` | arrived |
+| 46 | `cast_while_stocked` | `no_target` ×43 |
+
+97% of 7,078 cycles were a no-op waiting on a delivery that no rule could
+cause. The character idled next to hostile monsters, dropped to 1 HP and died,
+and every line of the log looked healthy. Nothing was broken — the rules simply
+had no answer to "I have run out of the thing I consume", so they picked the
+only rule that always matched.
+
+So, when writing the last rule:
+
+- **Make it do something with a destination or a target.** Walking to a known
+  rendezvous is a fine catch-all; polling a channel is not. If the character
+  genuinely depends on another, the catch-all should still *move it to where a
+  handoff can happen* rather than idle wherever it stands.
+- **Give the resource problem its own rule, phrased as an errand.** "Out of
+  runes and holding coins → go buy" beats "out of runes → wait". A mind that
+  can only consume and never acquire will always stall.
+- **Check every input the chosen recipe consumes.** A cast rule gated on Mind
+  runes alone chose `cast` 46 times with zero Air runes and returned
+  `no_castable_spell` each time. Gate on all of them.
+- **Watch HP in a rule that fires from anywhere.** A retreat rule gated on
+  "not at basecamp" never fires for a character already standing in the danger
+  it should be fleeing. `hp_ratio < 0.5` with no position condition is the
+  version that works, and `travel.py` to a tile already reached is a cheap
+  no-op, so there is no cost to always allowing it.
+
+`--dry-run --explain` prints every rule considered and the one chosen, against
+live state, without acting. Run it once after editing a mind file: if the
+answer is your catch-all, the file is not ready.
+
+### A charter is a constraint on argv, not a note
+
+If a character's charter forbids something — a mage that never melees, even in
+retaliation — then no rule may dispatch a recipe that can do it. `train.py` and
+`farm.py` take `--option Attack`, so a rule reaching for either to "earn a
+little gold" is a breach however the note above it is worded, and prose in the
+mind file does not restrain the runner. Audit the `argv` a mind can actually
+emit, not its comments. `cast.py` is safe here by construction: it never falls
+back to melee or ranged.
+
+A charter that rules out every income route also means the character cannot
+fund itself, and its mind file has to say who does instead.
+
 ## Writing one
 
 A recipe earns its place when a goal is a loop and every round would otherwise

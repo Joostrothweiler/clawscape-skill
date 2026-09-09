@@ -61,6 +61,27 @@ world; anything still unconfirmed says so.
     toll dialog; `walkTo` across that boundary is `client_rejected` from
     every tile tried until the dialog is completed, then the same walk
     succeeds instantly. Confirmed live 2026-09-08.
+
+    Three further details, each of which cost a session on its own:
+
+    - **It is a toll and it costs 10 coins.** A character carrying none
+      completes the whole dialog and is still refused, with no message saying
+      why. One character burned 67 actions on the correct tile with the dialog
+      cleared, reading as a hard block, because its purse was empty. Check
+      `have(995) >= 10` before routing anyone across.
+    - **It only works from `z = 3227`.** All seven confirmed crossings in
+      `routes.json` depart (3264-3267, 3227) and land (3273, 3227); `z=3228`
+      has none. Being one tile off looks exactly like a wall.
+    - **The crossing hop is 6-9 tiles and must not be split.** It exceeds the
+      ~7-8 tile cap above because it behaves like a dialog-gated teleport
+      rather than a walk, so the usual "hop in small steps" advice inverts
+      here: send one direct `walkTo` to (3273, 3227).
+
+    The boundary is a **river**, so this is the only crossing. A character
+    north of z≈3240 on the west bank cannot reach the eastern corridor
+    (x≈3269-3277) by walking east at its own latitude — it is walking into
+    water, which reports as "moving but not closing on the target". Go south
+    to z=3227, cross, then go north.
 - Not every blocker is an interactable loc at all. A farm/garden area
   southwest of Draynor blocked northward travel with nothing crossable in a
   30-tile `scanNearbyLocs` — no Gate, Door, Stile or Fence anywhere in range.
@@ -95,6 +116,26 @@ trained level `baseLevel`.
 
 Prayer points do not track Prayer level. An active prayer drains them until
 they run out, and nothing seen so far restores them short of an altar.
+
+**This world's XP curve is not RuneScape's, and it is about 15× flatter.**
+Assuming the familiar table (level 99 = 13,034,431) overstates the remaining
+work by more than an order of magnitude, which is enough to make a reachable
+goal look impossible and to send a fleet chasing supply it never needed. Fitted
+from 22 observed (level, experience) pairs across five characters:
+
+| level | experience | level | experience |
+| --- | --- | --- | --- |
+| 25 | 5,000 | 73 | 166,300 |
+| 32 | 9,072 | 79 | 250,300 |
+| 46 | 24,640 | 85 | 388,600 |
+| 53 | 40,650 | 92 | 622,125 |
+
+Marginal cost runs ~550 xp/level at level 30, ~2,500 at level 50 and ~33,000 at
+level 90, growing roughly 1.07× per level. Extrapolating gives **level 99 ≈
+930,000 xp**, not 13.0M. Before sizing any long grind, read two real
+`(level, experience)` pairs off live characters and fit the gap rather than
+reaching for a remembered table — and treat the ~930k figure as an estimate
+(±~15%) until someone actually gets there.
 
 ## Death
 
@@ -178,6 +219,35 @@ arrived in the other, and both character `.sav` files were rewritten together
 within seconds (ADR 0014). Still read the receiving inventory back before
 telling an owner a transfer is done — a wrong-but-valid `optionIndex` on step
 1 opens something other than a trade and every dispatch still says success.
+
+**Check `modalInterface` before trusting step 1, or the other three steps are
+aimed at nothing.** The sequence above is right, and the way to get it wrong is
+to assume it started. Because players carry no option list, step 1 is a guessed
+index that reports `success: true` whichever menu entry it hit — so a session
+that never opened a trade looks identical to one that did, and steps 2-4 then
+click components on a screen that isn't there, each reporting success. A later
+run spent roughly 150 actions across four characters this way and transferred
+nothing, never once reading `state trade` or `modalInterface` back.
+
+So gate the sequence on observation, not on dispatch results:
+
+1. after step 1, require `modalInterface == 3323` before continuing — if it is
+   anything else, the index was wrong; send a different one and read the game
+   message,
+2. after the accepts, require `modalInterface == 3443` before confirming,
+3. and read the **receiving** inventory at the end.
+
+If any of those checks is missing, the run cannot tell success from a no-op.
+
+**`dropItem` + `pickupItem` is the simpler option when both characters are
+yours.** The giver runs `dropItem` {slot}, the receiver `pickupItem`
+{x, z, itemId} on the same tile: one action each side, no modal handshake and
+no two-sided timing, which matters because the hard part of a trade between two
+independently-driven agents is synchronising them, not the protocol.
+`recipes/deliver.py` is the giver's half and `recipes/collect.py` the
+receiver's. The trade-off is safety, not reliability — a dropped stack is
+visible to anyone nearby, so prefer a real trade in company, and note the giver
+must not walk away before the pickup lands.
 
 ## Discovering other characters
 
