@@ -9,6 +9,7 @@ configure.
 | --- | --- |
 | [`train.py`](train.py) | Repeats one interaction until a skill reaches a level, clearing level-up dialogs and stopping on death, low HP, a full inventory or a stall. |
 | [`travel.py`](travel.py) | Walks further than one `walkTo` call safely handles, hopping in small steps and crossing whatever blocks the way (a Gate, a Stile, a dialog-gated border) instead of stopping at the first silent non-move. |
+| [`route.py`](route.py) | Walks somewhere far by planning over tiles this world has *already walked*: nodes are tiles stood on, edges are hops that happened, and the shortest chain is handed to `travel.py` a leg at a time. Replaces hand-picking waypoints out of `routes.json`, and refuses to invent a route rather than walking a character at a wall. |
 | [`trade.py`](trade.py) | Moves items between two characters through the real trade interface, run on both sides at once. Gates every step on `modalInterface` and proves the transfer from an inventory delta, because each screen reports success whether or not anything moved. Use it instead of a drop relay for anything valuable — dropped items despawn. |
 | [`mind.py`](mind.py) | Runs a character from a [mind file](minds/) — goals that drop themselves when their condition holds, and rules that pick the next recipe from the situation rather than from a fixed order. Records every stop reason as a fact the next cycle can ask about. |
 
@@ -191,6 +192,35 @@ same file rather than starting blind.
 line per outcome, appended by whichever character produced it, so a stop
 reason is something the next cycle can query rather than prose someone has to
 read. It is runtime state, not source — it is not committed.
+
+### `open_problems` is map data, not a list of impossible moves
+
+Worth stating plainly, because reading it the obvious way throws away more than
+half the map. `travel.py` files a failed *journey* under `open_problems` — but
+the `hops` inside that record are movements that really happened; the character
+stood on each of those tiles in turn. Only the trip as a whole failed.
+
+Built from `confirmed_paths` alone the graph is 1,301 edges in 5 disconnected
+components. The hops recorded inside `open_problems` add **1,529 more** — more
+than the confirmed set. Any reader that navigates by this file should use both,
+and prefer confirmed hops only as a tie-break.
+
+Two traps come with that, both of which produced confidently wrong routes
+before they were fixed in [`route.py`](route.py):
+
+- **The `to` field of a failed journey was never reached.** Treating
+  `last_hop → to` as an edge invents a hop straight to the destination. It made
+  every plan end in a single 135-tile stride onto the goal tile.
+- **Sanity-check hop length.** `walkTo` caps at ~7-8 tiles and the one known
+  exception is 6-9, so an edge much longer than that is a recording artefact
+  rather than a movement.
+
+Once both are excluded, the graph tells the truth — including unwelcome truths.
+It currently says the southern world (1,613 tiles, up to z≈3380) and the
+Varrock cluster containing Aubury's Rune Shop (32 tiles, z 3353-3402) **share
+no recorded hop**: every journey in the northern cluster *starts* there, so
+nobody has ever walked between them. That is worth far more than a plan that
+walks a character into a boundary, and it names the frontier to explore.
 
 `routes.json` is world knowledge, true for every character. What one character
 did, promised or became belongs in its own journal instead — see
