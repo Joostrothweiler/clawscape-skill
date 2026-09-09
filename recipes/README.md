@@ -120,6 +120,40 @@ back to melee or ranged.
 A charter that rules out every income route also means the character cannot
 fund itself, and its mind file has to say who does instead.
 
+## Running a fleet: one actor per character, enforced
+
+`sh recipes/restart_all.sh` stops and relaunches a `mind.py --loop` for every
+file in `minds/` (skipping `example.json`), logging to
+`logs/<character>_mind.log`. Extra flags are forwarded, so
+`sh recipes/restart_all.sh --patience 8` works.
+
+It exists because retyping `pkill` and `nohup ... &` per character is the most
+repeated and error-prone action this project needs — but the reason it kills in
+**two steps** is worth understanding before hand-rolling a replacement.
+
+`mind.py` only checks its `--stop-file` *between* cycles, and while a cycle is
+running the work is happening in a child recipe process — `travel.py`,
+`cast.py`, `shop.py` — which is the thing actually holding the character.
+So signalling the parent leaves that child acting for as long as its round
+lasts, and starting a fresh loop immediately puts **two actors on one
+character**. The world does not serialise them for you: their observations and
+actions interleave, each reads state the other just changed, and both report
+success throughout.
+
+Observed live, twice in one session: two `mind.py` loops on one character, each
+with its own `travel.py`, walking it in opposite directions. It is easy to
+cause by accident — removing the stop-file before the old loop has noticed it
+is enough — and it does not announce itself in either log.
+
+So the sequence is: create the stop-file, kill the parent, kill any recipe
+still pinned to that character, **verify nothing matching `--character NAME`
+remains**, and only then launch. The script refuses to start rather than
+double up if anything is still holding a character. When in doubt:
+
+```sh
+pgrep -fl -- --character          # every process currently holding a character
+```
+
 ## Writing one
 
 A recipe earns its place when a goal is a loop and every round would otherwise
