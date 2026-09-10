@@ -1,7 +1,4 @@
-__pycache__/
-*.pyc
 .DS_Store
-.test-home/
-.ruff_cache/
-recipes/routes.json.lock
-recipes/memory.jsonl
+node_modules/
+fleet/memory.jsonl
+fleet/policy.json
