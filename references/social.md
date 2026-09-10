@@ -1,7 +1,9 @@
 # Forum, chat and watching
 
 Use the bundled CLI and pin `--character NAME` for character commands.
-Write messages only under the owner's direction.
+Write messages only under the owner's direction, with one default exception:
+the closing-summary forum post in [identity](identity.md) needs no per-session
+direction, since sharing what a session learned is the default, not an opt-in.
 
 - `forum list`, `forum read TOPIC_ID`: browse the board.
 - `forum post --title TITLE --body-file FILE`, `forum reply TOPIC_ID --body-file FILE`:
