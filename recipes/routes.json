@@ -1,73 +1,50 @@
 {
   "landmarks": {
-    "lumbridge_courtyard": [
-      3222,
-      3218
-    ],
-    "bobs_axe_shop": [
-      3233,
-      3202
-    ],
-    "rune_shop": [
-      3252,
-      3404
-    ]
+    "lumbridge_courtyard": [3222, 3218],
+    "lumbridge_church": [3243, 3215],
+    "bobs_axe_shop": [3233, 3202],
+    "rune_shop": [3252, 3404]
   },
   "crossings": [
     {
       "note": "Al Kharid / Lumbridge river boundary, and the only crossing on it. Its two Gate locs are decorative -- opening them does nothing. walkTo across x=3268 is client_rejected from every tile tried until the toll dialog below is completed, at which point the same walk succeeds instantly. Confirmed live 2026-09-08. Three details each cost a session: (1) it is a TOLL costing 10 coins -- a character with an empty purse completes the whole dialog and is still refused, with no message saying why, which reads exactly like a hard block; (2) it works only from z=3227 -- all confirmed crossings depart (3264-3267, 3227) and land (3273, 3227), while z=3228 has none, so being one tile off looks like a wall; (3) the crossing hop is 6-9 tiles, longer than walkTo's ~7-8 cap, because it behaves like a dialog-gated teleport -- send ONE direct walkTo to 'beyond' rather than hopping. Because the boundary is a river, a character on the west bank north of z~3240 cannot reach the eastern corridor (x~3269-3277) by walking east at its own latitude; it is walking into water and reports 'moving but not closing on the target'. Go south to z=3227, cross, then north.",
-      "x_range": [
-        3260,
-        3276
-      ],
-      "z_range": [
-        3150,
-        3260
-      ],
+      "x_range": [3260, 3276],
+      "z_range": [3150, 3260],
       "mechanism": "dialog",
       "npc": "Border Guard",
-      "beyond": [
-        3273,
-        3227
-      ],
+      "beyond": [3273, 3227],
       "toll_coins": 10,
       "depart_z": 3227,
       "single_hop": true
     },
     {
-      "note": "Lumbridge/Varrock. The southern world and the Varrock area are separate regions in this file's own recorded history: everything walked in the north was walked by a character that was already there, so for a long time no route existed between them and route.py correctly reported no_known_route. This is the crossing that links them, found by route.py --explore probing the narrowest unwalked gaps between the two regions. It is a plain walk -- no gate, door, stile or dialog -- which is why nothing in the world announces it and why only exploring found it. Confirmed live 2026-09-09.",
-      "x_range": [
-        3186,
-        3222
-      ],
-      "z_range": [
-        3326,
-        3368
-      ],
+      "note": "Lumbridge/Varrock. The southern world and the Varrock area are separate regions in this file's own recorded history: everything walked in the north was walked by a character that was already there, so for a long time no route existed between them and route.py correctly reported no_known_route. This is the crossing that links them, found by route.py --explore probing the narrowest unwalked gaps between the two regions. It is a plain walk -- no gate, door, stile or dialog -- which is why nothing in the world announces it and why only exploring found it. Confirmed live 2026-09-09. This is also, independently, the far edge of the swamp/marsh band two characters got stuck in from 2026-09-08 through 2026-09-10 approaching from the south -- the crossing sits just past where those attempts gave up: the swamp itself wasn't the route, this specific gap north of it was.",
+      "x_range": [3186, 3222],
+      "z_range": [3326, 3368],
       "mechanism": "walk",
-      "from": [
-        3219,
-        3333
-      ],
-      "beyond": [
-        3190,
-        3363
-      ]
+      "from": [3219, 3333],
+      "beyond": [3190, 3363]
     }
   ],
   "confirmed_paths": [
     {
       "from": [3207, 3276],
       "to": [3222, 3218],
-      "note": "Draynor-area farm back to Lumbridge courtyard. Clean, no obstacles.",
-      "timestamp": "2026-09-08T14:01:11Z"
+      "note": "Draynor-area farm boundary back to Lumbridge courtyard. Clean both times run (2026-09-08, 2026-09-10), no obstacles. Reliable escape route: get to (3207,3276) first, then this leg is safe.",
+      "confirmed_times": 2
+    },
+    {
+      "from": [3222, 3218],
+      "to": [3255, 3209],
+      "note": "Lumbridge courtyard east through a building cluster to the Lumbridge Church (Altar, Pray-at, at ~3243,3215 -- see lumbridge_church landmark) and out into open woods beyond. Clean, all doors already open. Confirmed 2026-09-10.",
+      "confirmed_times": 1
+    },
+    {
+      "from": [3255, 3209],
+      "to": [3235, 3286],
+      "note": "From the woods east of the church, working generally northwest through open forest, reaches x~3235 z~3286. Not fully clean: needed a couple of sidesteps and one Gate. Confirmed 2026-09-10. Short of the actual Lumbridge/Varrock crossing (departs 3219,3333) -- the link between this leg and that crossing hasn't been walked yet.",
+      "confirmed_times": 1
     }
   ],
-  "open_problems": [
-    {
-      "area": "Draynor farm/garden, roughly x 3193-3225, z 3260-3320",
-      "note": "Corrects an earlier, wrong hypothesis logged here that this area had no Gate/Door/Stile/Fence in it at all -- it does; multiple Gates, a Door, and several Stiles were found and successfully crossed heading north from Al Kharid through here on 2026-09-08 (see the obstacle list this entry replaces, in git history). The actual problem: it's a maze of small farm plots, each individually crossable, that don't compose into a route north. Two separate live attempts, one over 30-odd hops and dozens of individual crossings, made real net progress for a while and then landed in a pocket (centered roughly on 3205-3210, 3286-3301) where every crossable loc and every sidestep only led to another already-visited tile inside the same pocket -- confirmed by recipes/travel.py's own progress test (Chebyshev distance to target, checked against the best seen this trip), not just a hunch. Working hypothesis, still unconfirmed: this farm was never meant as a through-route at all, and the real Lumbridge-Varrock road lies further east, outside this area entirely. Try approaching Varrock via the direct road from Lumbridge courtyard (see the lumbridge_courtyard landmark) without detouring through Al Kharid or Draynor first, rather than re-attempting a path through this pocket.",
-      "logged": "2026-09-08"
-    }
-  ]
+  "open_problems": []
 }
