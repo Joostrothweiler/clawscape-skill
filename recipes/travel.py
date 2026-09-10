@@ -18,6 +18,13 @@ routes.json). If none of those apply it tries a short sidestep, since a
 boundary that blocks straight-line travel is often crossable a few tiles to
 either side even with no interactable loc marking the way through.
 
+A hop that is refused is retried at half the length, and half again, down to
+one tile, before anything concludes the way is blocked. Without that this
+recipe cannot walk a corridor at all: `walkTo` is given a tile, and in a
+tunnel narrower than the hop that tile is usually inside rock, so the walk is
+refused and the character stands still — indistinguishable in the state from
+a wall. Open ground still takes the long hop first and pays nothing for it.
+
 "Net progress" is checked two ways, not just whether the last hop moved the
 character at all: the Chebyshev distance to the target must strictly improve
 on the best seen so far, and the landing tile must not repeat one already
@@ -158,6 +165,36 @@ def clamp(value: int, low: int, high: int) -> int:
 
 def chebyshev(a: tuple, b: tuple) -> int:
     return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
+
+
+def hop_ladder(hop_size: int) -> list:
+    """Hop lengths to try for one step, longest first.
+
+    A single fixed hop length is why this recipe could not walk a corridor.
+    `walkTo` is given a tile, and in a tunnel narrower than the hop that tile
+    is usually inside rock, so the walk is refused and the character does not
+    move -- identical in the state to a wall, a gate, or the distance cap.
+    Live in the Varrock sewers this reported the *same tile* across eight
+    consecutive waypoint calls before giving up, while a 4-tile step covered
+    24 tiles in six moves through the same passage.
+
+    So a failed hop halves and retries before anything concludes the way is
+    blocked. Open ground still takes the long hop first and pays nothing for
+    the ladder; only a corridor ever walks down it.
+    """
+    lengths = []
+    length = max(1, hop_size)
+    while length > 1:
+        lengths.append(length)
+        length //= 2
+    lengths.append(1)
+    return lengths
+
+
+def step_toward(cur: tuple, target: tuple, hop: int) -> tuple:
+    """The tile `hop` tiles from `cur` in the direction of `target`."""
+    dx, dz = target[0] - cur[0], target[1] - cur[1]
+    return (cur[0] + clamp(dx, -hop, hop), cur[1] + clamp(dz, -hop, hop))
 
 
 def progress_check(new_pos, cur, target, best_dist, visited, cycle_window=6):
@@ -321,15 +358,23 @@ def travel(args) -> str:
             record(args.routes, start, target, hops, obstacles, True)
             return "arrived"
 
-        step = (
-            cur[0] + clamp(dx, -args.hop_size, args.hop_size),
-            cur[1] + clamp(dz, -args.hop_size, args.hop_size),
-        )
-        act(character, "walkTo", {"x": step[0], "z": step[1]})
-        for _ in range(5):
-            wait(character, args.ticks)
-            state = read_state(character)
+        # Longest hop first, halving on refusal: a corridor narrower than the
+        # hop puts the requested tile inside rock, which looks exactly like a
+        # wall. See hop_ladder.
+        step = step_toward(cur, target, args.hop_size)
+        for hop in hop_ladder(args.hop_size):
+            step = step_toward(cur, target, hop)
+            if step == cur:
+                continue
+            act(character, "walkTo", {"x": step[0], "z": step[1]})
+            for _ in range(3):
+                wait(character, args.ticks)
+                state = read_state(character)
+                if pos_of(state) != cur:
+                    break
             if pos_of(state) != cur:
+                if hop < args.hop_size:
+                    emit({"narrowed_hop": hop, "from": list(cur)})
                 break
         new_pos = pos_of(state)
         progressing, cycling, new_dist = progress_check(
