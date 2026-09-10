@@ -109,6 +109,10 @@ Attacking from a distance lands no hits and earns no XP however long it runs.
 trade or equipping** — it holds what the state output does not explain,
 including what dying costs.
 
+**Read [magic](references/magic.md) before casting anything** — spells need a
+`spellComponent` id that nothing in the game state exposes, and Magic is the
+one skill here that costs gold per cast, so it needs an income plan attached.
+
 ## Sustain the objective
 
 Clear level-up continuation dialogs before resuming. Two identical failures or
