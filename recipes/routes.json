@@ -1,50 +1,315 @@
 {
   "landmarks": {
-    "lumbridge_courtyard": [3222, 3218],
-    "lumbridge_church": [3243, 3215],
-    "bobs_axe_shop": [3233, 3202],
-    "rune_shop": [3252, 3404]
+    "lumbridge_courtyard": [
+      3222,
+      3218
+    ],
+    "lumbridge_church": [
+      3243,
+      3215
+    ],
+    "bobs_axe_shop": [
+      3233,
+      3202
+    ],
+    "rune_shop": [
+      3252,
+      3404
+    ],
+    "varrock_bank": [
+      3253,
+      3418
+    ]
   },
   "crossings": [
     {
       "note": "Al Kharid / Lumbridge river boundary, and the only crossing on it. Its two Gate locs are decorative -- opening them does nothing. walkTo across x=3268 is client_rejected from every tile tried until the toll dialog below is completed, at which point the same walk succeeds instantly. Confirmed live 2026-09-08. Three details each cost a session: (1) it is a TOLL costing 10 coins -- a character with an empty purse completes the whole dialog and is still refused, with no message saying why, which reads exactly like a hard block; (2) it works only from z=3227 -- all confirmed crossings depart (3264-3267, 3227) and land (3273, 3227), while z=3228 has none, so being one tile off looks like a wall; (3) the crossing hop is 6-9 tiles, longer than walkTo's ~7-8 cap, because it behaves like a dialog-gated teleport -- send ONE direct walkTo to 'beyond' rather than hopping. Because the boundary is a river, a character on the west bank north of z~3240 cannot reach the eastern corridor (x~3269-3277) by walking east at its own latitude; it is walking into water and reports 'moving but not closing on the target'. Go south to z=3227, cross, then north.",
-      "x_range": [3260, 3276],
-      "z_range": [3150, 3260],
+      "x_range": [
+        3260,
+        3276
+      ],
+      "z_range": [
+        3150,
+        3260
+      ],
       "mechanism": "dialog",
       "npc": "Border Guard",
-      "beyond": [3273, 3227],
+      "beyond": [
+        3273,
+        3227
+      ],
       "toll_coins": 10,
       "depart_z": 3227,
       "single_hop": true
     },
     {
       "note": "Lumbridge/Varrock. The southern world and the Varrock area are separate regions in this file's own recorded history: everything walked in the north was walked by a character that was already there, so for a long time no route existed between them and route.py correctly reported no_known_route. This is the crossing that links them, found by route.py --explore probing the narrowest unwalked gaps between the two regions. It is a plain walk -- no gate, door, stile or dialog -- which is why nothing in the world announces it and why only exploring found it. Confirmed live 2026-09-09. This is also, independently, the far edge of the swamp/marsh band two characters got stuck in from 2026-09-08 through 2026-09-10 approaching from the south -- the crossing sits just past where those attempts gave up: the swamp itself wasn't the route, this specific gap north of it was.",
-      "x_range": [3186, 3222],
-      "z_range": [3326, 3368],
+      "x_range": [
+        3186,
+        3222
+      ],
+      "z_range": [
+        3326,
+        3368
+      ],
       "mechanism": "walk",
-      "from": [3219, 3333],
-      "beyond": [3190, 3363]
+      "from": [
+        3219,
+        3333
+      ],
+      "beyond": [
+        3190,
+        3363
+      ]
     }
   ],
   "confirmed_paths": [
     {
-      "from": [3207, 3276],
-      "to": [3222, 3218],
+      "from": [
+        3207,
+        3276
+      ],
+      "to": [
+        3222,
+        3218
+      ],
+      "hops": [
+        [
+          3213,
+          3272
+        ],
+        [
+          3220,
+          3265
+        ],
+        [
+          3218,
+          3257
+        ],
+        [
+          3222,
+          3250
+        ],
+        [
+          3221,
+          3244
+        ],
+        [
+          3222,
+          3237
+        ],
+        [
+          3230,
+          3232
+        ],
+        [
+          3231,
+          3222
+        ],
+        [
+          3225,
+          3219
+        ]
+      ],
       "note": "Draynor-area farm boundary back to Lumbridge courtyard. Clean both times run (2026-09-08, 2026-09-10), no obstacles. Reliable escape route: get to (3207,3276) first, then this leg is safe.",
       "confirmed_times": 2
     },
     {
-      "from": [3222, 3218],
-      "to": [3255, 3209],
-      "note": "Lumbridge courtyard east through a building cluster to the Lumbridge Church (Altar, Pray-at, at ~3243,3215 -- see lumbridge_church landmark) and out into open woods beyond. Clean, all doors already open. Confirmed 2026-09-10.",
+      "from": [
+        3222,
+        3218
+      ],
+      "to": [
+        3255,
+        3209
+      ],
+      "note": "Lumbridge courtyard east through a building cluster to the Lumbridge Church (Altar, Pray-at, at ~3243,3215 -- see lumbridge_church landmark) and out into open woods beyond. Clean, all doors already open. Confirmed 2026-09-10. No `hops` recorded here -- this leg was walked with manual scan-then-walk calls rather than travel.py, so the exact intermediate tiles weren't logged precisely enough to trust as graph edges. Worth re-walking with travel.py once to capture real hops.",
       "confirmed_times": 1
     },
     {
-      "from": [3255, 3209],
-      "to": [3235, 3286],
+      "from": [
+        3255,
+        3209
+      ],
+      "to": [
+        3235,
+        3286
+      ],
+      "hops": [
+        [
+          3243,
+          3261
+        ],
+        [
+          3236,
+          3262
+        ],
+        [
+          3244,
+          3262
+        ],
+        [
+          3239,
+          3269
+        ],
+        [
+          3238,
+          3277
+        ],
+        [
+          3237,
+          3284
+        ],
+        [
+          3238,
+          3276
+        ],
+        [
+          3235,
+          3280
+        ]
+      ],
       "note": "From the woods east of the church, working generally northwest through open forest, reaches x~3235 z~3286. Not fully clean: needed a couple of sidesteps and one Gate. Confirmed 2026-09-10. Short of the actual Lumbridge/Varrock crossing (departs 3219,3333) -- the link between this leg and that crossing hasn't been walked yet.",
       "confirmed_times": 1
+    },
+    {
+      "from": [
+        3266,
+        3310
+      ],
+      "to": [
+        3219,
+        3333
+      ],
+      "hops": [
+        [
+          3259,
+          3317
+        ],
+        [
+          3243,
+          3304
+        ],
+        [
+          3238,
+          3309
+        ],
+        [
+          3232,
+          3313
+        ],
+        [
+          3225,
+          3320
+        ],
+        [
+          3219,
+          3327
+        ],
+        [
+          3219,
+          3333
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T12:22:15Z"
+    },
+    {
+      "from": [
+        3190,
+        3363
+      ],
+      "to": [
+        3252,
+        3404
+      ],
+      "hops": [
+        [
+          3195,
+          3371
+        ],
+        [
+          3202,
+          3378
+        ],
+        [
+          3209,
+          3385
+        ],
+        [
+          3216,
+          3392
+        ],
+        [
+          3223,
+          3399
+        ],
+        [
+          3227,
+          3390
+        ],
+        [
+          3234,
+          3395
+        ],
+        [
+          3238,
+          3391
+        ],
+        [
+          3248,
+          3393
+        ],
+        [
+          3252,
+          3400
+        ],
+        [
+          3252,
+          3404
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3216,
+            3392
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3223,
+            3399
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-10T12:23:20Z"
     }
   ],
-  "open_problems": []
+  "open_problems": [
+    {
+      "from": [3235, 3286],
+      "to": [3252, 3404],
+      "hops": [
+        [3228, 3286], [3222, 3287], [3229, 3286], [3238, 3293], [3237, 3295],
+        [3240, 3301], [3247, 3308], [3252, 3314], [3251, 3304], [3252, 3311],
+        [3248, 3302]
+      ],
+      "obstacles_crossed": [
+        {"pos": [3235, 3286], "resolved_by": "Gate:Open"},
+        {"pos": [3236, 3286], "resolved_by": "sidestep", "landed": [3228, 3286]},
+        {"pos": [3222, 3287], "resolved_by": "sidestep", "landed": [3229, 3286]},
+        {"pos": [3231, 3286], "resolved_by": "Gate:Open"},
+        {"pos": [3238, 3293], "resolved_by": "Gate:Open"},
+        {"pos": [3237, 3295], "resolved_by": "Gate:Open"},
+        {"pos": [3252, 3314], "resolved_by": "sidestep", "landed": [3251, 3304]},
+        {"pos": [3253, 3304], "resolved_by": "sidestep", "landed": [3252, 3311]},
+        {"pos": [3252, 3311], "resolved_by": "sidestep", "landed": [3248, 3302]}
+      ],
+      "note": "This journey's own target was never actually reached this way -- the real route (see confirmed_paths) goes through the documented crossing at (3219,3333) instead. Kept here anyway: every hop above is a real recorded movement route.py's graph can use, and the obstacles_crossed list (several real Gates in this area) is useful data in its own right, not just a record of failure. Resolved as a live blocker 2026-09-10.",
+      "timestamp": "2026-09-10T12:21:33Z"
+    }
+  ]
 }
