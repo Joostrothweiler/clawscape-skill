@@ -6,24 +6,41 @@ on:
   pull_request:
 
 jobs:
-  test:
+  typecheck:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # The skill claims to need nothing but Python 3.8+, so both ends of
-        # that claim are tested.
-        python: ["3.8", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - run: python -m unittest discover -s tests -v
+      - uses: oven-sh/setup-bun@v2
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v3
-      - run: ruff check .
-      - run: ruff format --check .
+      # The fleet layer imports rs-sdk's state collector, action executor and
+      # headless client, so it only typechecks in place. Check it out and drop
+      # ours in, which is also exactly the install the README documents -- if
+      # this job passes, those instructions worked.
+      - name: Check out rs-sdk
+        run: git clone --depth 1 https://github.com/MaxBittker/rs-sdk.git /tmp/rs-sdk
+
+      # The web client carries its own package.json, and the typecheck covers
+      # its whole tree, so a root-only install leaves half of rs-sdk's own
+      # imports unresolvable.
+      - name: Install
+        working-directory: /tmp/rs-sdk
+        run: bun install && cd server/webclient && bun install
+
+      - name: Drop the fleet in
+        run: cp -r fleet /tmp/rs-sdk/server/webclient/src/fleet
+
+      # Report everything, but fail only on our own files. The typecheck spans
+      # all of rs-sdk, whose main branch we do not control -- gating on it
+      # would make this job a monitor of somebody else's tree rather than a
+      # check on this pull request.
+      - name: Typecheck
+        working-directory: /tmp/rs-sdk
+        run: |
+          bunx tsc --noEmit -p server/webclient/tsconfig.json > tsc.log 2>&1 || true
+          cat tsc.log
+          if grep -q 'src/fleet/' tsc.log; then
+            echo "::error::type errors in fleet/"
+            grep 'src/fleet/' tsc.log
+            exit 1
+          fi
+          echo "fleet/ typechecks clean"
