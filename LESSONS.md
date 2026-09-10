@@ -72,6 +72,23 @@ credit for hand-offs and keep shaping to what it can actually observe.
 like arguments for hierarchical RL. They were arguments for a correct reward.
 The bandit abstraction was fine throughout.
 
+**A value estimate cannot express a fact about one target.** On a shared server
+most piles on the floor belong to somebody else: visible, not yours, and the
+server refuses the request silently. Measured here, **46% of everything the
+fleet did** was refused pickups — one character asking for one pile at a tick
+apiece, 421 times, while its neighbours earned.
+
+No amount of learning fixes this, because the *rule* is not bad. Picking things
+up is worth doing; that pile is not. A per-rule value has nowhere to put "that
+one, specifically, is not available to me", so it averages the refusals into
+the rule and either keeps trying or wrongly abandons a good behaviour. The fix
+is instance-level memory — back off from a target that refused you, for a
+while — sitting alongside the learner rather than inside it. Adding it took the
+waste from 46% of all actions to **3%**.
+
+The general shape: *credit assignment answers "which behaviour", never "which
+target". Keep a cheap blacklist for the second question.*
+
 ## The benchmark
 
 **RuneBench scores the best 15-second window, not the total.** The metric is

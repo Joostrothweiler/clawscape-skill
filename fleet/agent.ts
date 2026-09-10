@@ -212,6 +212,12 @@ export class Agent {
         if (Object.keys(delta).length) row.xpBySkill = delta;
         remember(row);
 
+        try {
+            f.intent.onResolve?.(resolution, b);
+        } catch (e) {
+            console.error(`[${this.name}] onResolve for ${f.rule.name} threw:`, e);
+        }
+
         this.outcomes++;
         this.xpGained += xp;
         if (resolution !== 'done') this.lastFailure = `${f.rule.name}:${resolution}`;

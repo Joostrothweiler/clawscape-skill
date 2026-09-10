@@ -31,13 +31,17 @@ const REST_UNTIL = 9;
  */
 const handedOff = new Map<string, Map<string, number>>();
 
-function markHandoff(who: string, x: number, z: number, tick: number): void {
+function markBlind(who: string, x: number, z: number, tick: number, ticks: number): void {
     const mine = handedOff.get(who) ?? new Map<string, number>();
-    mine.set(`${x},${z}`, tick + HANDOFF_BLIND_TICKS);
+    mine.set(`${x},${z}`, tick + ticks);
     handedOff.set(who, mine);
 }
 
-/** True when this pile is one we may take: it exists, and it is not our own hand-off. */
+function markHandoff(who: string, x: number, z: number, tick: number): void {
+    markBlind(who, x, z, tick, HANDOFF_BLIND_TICKS);
+}
+
+/** True when this pile is one we may take: it exists, and we are not blind to it. */
 function theirs(who: string, tick: number, pile: { x: number; z: number } | null): boolean {
     if (!pile) return false;
     const until = handedOff.get(who)?.get(`${pile.x},${pile.z}`);
@@ -46,6 +50,18 @@ function theirs(who: string, tick: number, pile: { x: number; z: number } | null
 
 /** Roughly how long a drop stays private to the dropper, with margin. */
 const HANDOFF_BLIND_TICKS = 400;
+
+/**
+ * How long to leave a pile alone after it refuses us.
+ *
+ * On a shared server most piles on the floor belong to somebody else: they are
+ * visible and they are not ours to take, and the server answers a request for
+ * one by discarding the op silently. Measured live, this was the single
+ * largest waste in the fleet -- 379 refusals, 288 of them one character
+ * hammering one pile at a tick apiece while its neighbours earned. A value
+ * estimate cannot fix this, because the rule is not bad; only that target is.
+ */
+const PILE_BACKOFF_TICKS = 100;
 
 const rules: Rule[] = [
     ...prelude,
@@ -80,7 +96,15 @@ const rules: Rule[] = [
             return {
                 action: { type: 'pickupItem', x: pile.x, z: pile.z, itemId: pile.id, reason: 'loose gold' },
                 done: after => after.coins > before,
-                ticks: 6
+                ticks: 6,
+                onResolve: (resolution, after) => {
+                    // Anything but success means this pile is not available to
+                    // us -- someone else's drop, or one we cannot route to.
+                    // Remember the tile rather than asking again next tick.
+                    if (resolution !== 'done') {
+                        markBlind(after.name, pile.x, pile.z, after.tick, PILE_BACKOFF_TICKS);
+                    }
+                }
             };
         }
     },

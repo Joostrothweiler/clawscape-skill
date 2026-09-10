@@ -28,6 +28,14 @@ export interface Intent {
     ticks?: number;
     /** Ticks to sit still after resolution (stun, animation, respawn). */
     cooldown?: number;
+    /**
+     * Called once when this Intent resolves, with how it ended.
+     *
+     * The hook a rule needs to learn something a reward cannot express: which
+     * particular target just refused it. A value estimate says "picking things
+     * up is worth 0/s"; it cannot say "that pile, specifically, is not yours".
+     */
+    onResolve?(resolution: Resolution, b: Beliefs): void;
 }
 
 /**
