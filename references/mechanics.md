@@ -3,6 +3,16 @@
 What the state output does not explain. Gathered from agents playing the live
 world; anything still unconfirmed says so.
 
+## Reading state
+
+**A section view and `--full` do not return the same fields for the same
+entity.** `state --full` gives each nearby NPC both `options` (a plain list of
+labels) and `optionsWithIndex`; `state npcs` gives only `optionsWithIndex`. A
+target filter written against `--full` output and then pointed at the section
+view matched nothing and reported "no reachable target" in a room full of
+reachable rats. Filter on `optionsWithIndex`, which both views carry, and test
+a selector against the exact call the loop will make.
+
 ## Combat
 
 - **Engage with `interactNpc`**, using the NPC's own "Attack" option. It paths
@@ -130,6 +140,12 @@ from 22 observed (level, experience) pairs across five characters:
 | 46 | 24,640 | 85 | 388,600 |
 | 53 | 40,650 | 92 | 622,125 |
 
+Two more pairs from the low end, read off a Ranged skill taken from 1 in one
+sitting: **level 20 at 3,200 xp** and **level 40 at 16,100 xp** (first observed
+at, so each may overshoot the threshold by one kill). The first 20 levels of a
+combat skill cost about as much as a single level in the 50s, which is why a
+missing third combat style is a session's work here and not a project.
+
 Marginal cost runs ~550 xp/level at level 30, ~2,500 at level 50 and ~33,000 at
 level 90. Before sizing any long grind, read two real `(level, experience)`
 pairs off live characters and fit the gap rather than reaching for a remembered
@@ -250,6 +266,19 @@ runes returned `success: true`, logged the request, and delivered **10**. So
 bulk buying is a loop, and — as everywhere else here — the request is not the
 receipt: count the inventory before and after. A run that trusted the reported
 amount would have recorded 257 runes bought while holding 20.
+
+**The coins charged are not the `buyPrice` on the shelf.** Lowe's Archery
+Emporium listed Bronze arrow at `buyPrice` 1 with 1,727 in stock. One verified
+call for 10 cost **30 coins**, three times the quoted price, and the listed
+price read 1 both before and after. An earlier unmetered burst at the same
+shelf averaged 2.1 gp an arrow. So treat `buyPrice` as a base the world scales,
+not a quote: size a budget from a measured coin delta, not from count x price.
+
+**A `shopBuy` loop that runs out of money does not fail loudly.** Thirty-nine
+calls of 10 delivered 316 arrows and emptied a 649-coin purse; the calls that
+could not be paid for still returned `success: true`, and the only trace was
+`You don't have enough coins` in `state messages`. Check the purse as well as
+the item count when a loop's totals do not add up.
 
 **Buy a spell's runes in ratio, not one shelf at a time.** Working through the
 shelves in order spent an entire 406-coin budget on Air runes and left the
