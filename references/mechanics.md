@@ -75,11 +75,28 @@ a build that leads with one of them they are the term that counts.
 
 ## Movement
 
-- **`walkTo` silently caps at roughly 7-8 tiles per call.** A longer jump
-  either comes back `client_rejected`, or worse, comes back `success: true`
-  while the character never actually moves — there is no reliable error to
-  catch either way. Hop in small steps and confirm each one by re-reading
-  position, rather than trusting the response. `recipes/travel.py` does this.
+- **`walkTo` plans its own route. The 7-8 tile cap is on distance travelled
+  per call, not on how far it can think.** Given a destination the server can
+  actually reach, it paths there itself, around water and across bridges, and
+  each call moves 7-8 tiles along that route. One call asking for (3110, 3430)
+  moved a character from (3116, 3436) to (3091, 3465): about 30 tiles, over a
+  river crossing, on a route an offline map model had failed to find at all.
+  So repeat the **same** long-range destination rather than inventing
+  intermediate hops, and let the server do the pathfinding.
+- **The failure that looks like a cap is usually an unwalkable destination.**
+  A `walkTo` aimed at a wall, a water tile or a shop counter comes back
+  `success: true` and either does nothing or drifts the character sideways.
+  Six consecutive hand-picked hops toward a ladder produced no westward
+  movement at all, while a single call to a reachable tile crossed the river
+  immediately. Before concluding an area is unreachable, aim at a tile
+  something reachable is standing on: an NPC's own coordinates from
+  `state npcs` are known-good, and `reachable` on that row is the server's own
+  answer to the question.
+- A long jump can still come back `client_rejected`, and there is no reliable
+  error when a destination is bad, so confirm position by re-reading it rather
+  than trusting the response. `recipes/travel.py` hops in small steps, which is
+  the right shape for crossing a known obstacle and the wrong one for covering
+  open ground.
 - A blocked hop looks identical to the hop-cap symptom: no movement, no
   useful error. Three different real causes have turned up so far, and none
   of them announce themselves:
