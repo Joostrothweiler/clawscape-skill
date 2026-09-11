@@ -39,24 +39,24 @@ Ids come from `pack/loc.pack` and `pack/npc.pack`, one `id=name` per line.
 import os, re
 
 
-def spawns(locid, section='NPC', mapdir='maps'):
+def spawns(locid, section="NPC", mapdir="maps"):
     hits = []
     for fn in os.listdir(mapdir):
-        m = re.match(r'm(\d+)_(\d+)\.jm2', fn)
+        m = re.match(r"m(\d+)_(\d+)\.jm2", fn)
         if not m:
             continue
         mx, mz = int(m.group(1)), int(m.group(2))
         inside = False
-        for line in open(os.path.join(mapdir, fn), errors='ignore'):
-            if line.startswith('==== ' + section):
+        for line in open(os.path.join(mapdir, fn), errors="ignore"):
+            if line.startswith("==== " + section):
                 inside = True
                 continue
-            if line.startswith('===='):
+            if line.startswith("===="):
                 inside = False
                 continue
-            if not inside or ':' not in line:
+            if not inside or ":" not in line:
                 continue
-            head, tail = line.split(':', 1)
+            head, tail = line.split(":", 1)
             parts = tail.split()
             if parts and parts[0] == str(locid):
                 lvl, x, z = head.split()
