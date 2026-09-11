@@ -19,6 +19,30 @@
     "varrock_bank": [
       3253,
       3418
+    ],
+    "clothes_shop": [
+      3205,
+      3417
+    ],
+    "varrock_general_store": [
+      3210,
+      3425
+    ],
+    "zaff_staff_shop": [
+      3203,
+      3433
+    ],
+    "thessalia_clothes": [
+      3208,
+      3417
+    ],
+    "lowe_archery": [
+      3233,
+      3421
+    ],
+    "varrock_sewer_manhole": [
+      3237,
+      3458
     ]
   },
   "crossings": [
@@ -286,30 +310,713 @@
         }
       ],
       "timestamp": "2026-09-10T12:23:20Z"
+    },
+    {
+      "from": [
+        3244,
+        3391
+      ],
+      "to": [
+        3235,
+        3400
+      ],
+      "hops": [
+        [
+          3237,
+          3398
+        ],
+        [
+          3235,
+          3400
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3244,
+            3391
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-10T13:41:31Z"
+    },
+    {
+      "from": [
+        3235,
+        3400
+      ],
+      "to": [
+        3225,
+        3410
+      ],
+      "hops": [
+        [
+          3228,
+          3407
+        ],
+        [
+          3225,
+          3410
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3235,
+            3400
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-10T13:41:39Z"
+    },
+    {
+      "from": [
+        3217,
+        3415
+      ],
+      "to": [
+        3215,
+        3415
+      ],
+      "hops": [
+        [
+          3215,
+          3415
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:41:48Z"
+    },
+    {
+      "from": [
+        3214,
+        3415
+      ],
+      "to": [
+        3210,
+        3425
+      ],
+      "hops": [
+        [
+          3211,
+          3421
+        ],
+        [
+          3210,
+          3425
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:41:54Z"
+    },
+    {
+      "from": [
+        3219,
+        3416
+      ],
+      "to": [
+        3210,
+        3430
+      ],
+      "hops": [
+        [
+          3216,
+          3421
+        ],
+        [
+          3210,
+          3428
+        ],
+        [
+          3210,
+          3430
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:43:52Z"
+    },
+    {
+      "from": [
+        3202,
+        3432
+      ],
+      "to": [
+        3203,
+        3433
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:43:56Z"
+    },
+    {
+      "from": [
+        3201,
+        3432
+      ],
+      "to": [
+        3200,
+        3425
+      ],
+      "hops": [
+        [
+          3204,
+          3430
+        ],
+        [
+          3199,
+          3426
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:44:02Z"
+    },
+    {
+      "from": [
+        3201,
+        3434
+      ],
+      "to": [
+        3208,
+        3417
+      ],
+      "hops": [
+        [
+          3206,
+          3430
+        ],
+        [
+          3208,
+          3423
+        ],
+        [
+          3207,
+          3418
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:44:12Z"
+    },
+    {
+      "from": [
+        3204,
+        3417
+      ],
+      "to": [
+        3208,
+        3417
+      ],
+      "hops": [
+        [
+          3207,
+          3416
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:44:50Z"
+    },
+    {
+      "from": [
+        3205,
+        3417
+      ],
+      "to": [
+        3237,
+        3458
+      ],
+      "hops": [
+        [
+          3212,
+          3424
+        ],
+        [
+          3218,
+          3430
+        ],
+        [
+          3224,
+          3437
+        ],
+        [
+          3231,
+          3444
+        ],
+        [
+          3236,
+          3450
+        ],
+        [
+          3237,
+          3457
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-10T13:46:07Z"
+    },
+    {
+      "from": [
+        3237,
+        3459
+      ],
+      "to": [
+        3233,
+        3421
+      ],
+      "hops": [
+        [
+          3234,
+          3453
+        ],
+        [
+          3233,
+          3446
+        ],
+        [
+          3233,
+          3439
+        ],
+        [
+          3233,
+          3432
+        ],
+        [
+          3233,
+          3425
+        ],
+        [
+          3233,
+          3421
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T07:46:55Z"
+    },
+    {
+      "from": [
+        3232,
+        3423
+      ],
+      "to": [
+        3210,
+        3425
+      ],
+      "hops": [
+        [
+          3230,
+          3428
+        ],
+        [
+          3223,
+          3425
+        ],
+        [
+          3216,
+          3425
+        ],
+        [
+          3210,
+          3425
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T07:49:17Z"
+    },
+    {
+      "from": [
+        3219,
+        3415
+      ],
+      "to": [
+        3233,
+        3421
+      ],
+      "hops": [
+        [
+          3219,
+          3429
+        ],
+        [
+          3226,
+          3423
+        ],
+        [
+          3233,
+          3421
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3219,
+            3415
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3219,
+            3429
+          ]
+        },
+        {
+          "pos": [
+            3226,
+            3423
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-11T07:50:13Z"
+    },
+    {
+      "from": [
+        3232,
+        3423
+      ],
+      "to": [
+        3237,
+        3458
+      ],
+      "hops": [
+        [
+          3236,
+          3429
+        ],
+        [
+          3237,
+          3436
+        ],
+        [
+          3236,
+          3442
+        ],
+        [
+          3235,
+          3450
+        ],
+        [
+          3237,
+          3457
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T07:50:58Z"
+    },
+    {
+      "from": [
+        3237,
+        9865
+      ],
+      "to": [
+        3237,
+        9858
+      ],
+      "hops": [
+        [
+          3237,
+          9859
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T08:00:39Z"
     }
   ],
   "open_problems": [
     {
-      "from": [3235, 3286],
-      "to": [3252, 3404],
+      "from": [
+        3235,
+        3286
+      ],
+      "to": [
+        3252,
+        3404
+      ],
       "hops": [
-        [3228, 3286], [3222, 3287], [3229, 3286], [3238, 3293], [3237, 3295],
-        [3240, 3301], [3247, 3308], [3252, 3314], [3251, 3304], [3252, 3311],
-        [3248, 3302]
+        [
+          3228,
+          3286
+        ],
+        [
+          3222,
+          3287
+        ],
+        [
+          3229,
+          3286
+        ],
+        [
+          3238,
+          3293
+        ],
+        [
+          3237,
+          3295
+        ],
+        [
+          3240,
+          3301
+        ],
+        [
+          3247,
+          3308
+        ],
+        [
+          3252,
+          3314
+        ],
+        [
+          3251,
+          3304
+        ],
+        [
+          3252,
+          3311
+        ],
+        [
+          3248,
+          3302
+        ]
       ],
       "obstacles_crossed": [
-        {"pos": [3235, 3286], "resolved_by": "Gate:Open"},
-        {"pos": [3236, 3286], "resolved_by": "sidestep", "landed": [3228, 3286]},
-        {"pos": [3222, 3287], "resolved_by": "sidestep", "landed": [3229, 3286]},
-        {"pos": [3231, 3286], "resolved_by": "Gate:Open"},
-        {"pos": [3238, 3293], "resolved_by": "Gate:Open"},
-        {"pos": [3237, 3295], "resolved_by": "Gate:Open"},
-        {"pos": [3252, 3314], "resolved_by": "sidestep", "landed": [3251, 3304]},
-        {"pos": [3253, 3304], "resolved_by": "sidestep", "landed": [3252, 3311]},
-        {"pos": [3252, 3311], "resolved_by": "sidestep", "landed": [3248, 3302]}
+        {
+          "pos": [
+            3235,
+            3286
+          ],
+          "resolved_by": "Gate:Open"
+        },
+        {
+          "pos": [
+            3236,
+            3286
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3228,
+            3286
+          ]
+        },
+        {
+          "pos": [
+            3222,
+            3287
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3229,
+            3286
+          ]
+        },
+        {
+          "pos": [
+            3231,
+            3286
+          ],
+          "resolved_by": "Gate:Open"
+        },
+        {
+          "pos": [
+            3238,
+            3293
+          ],
+          "resolved_by": "Gate:Open"
+        },
+        {
+          "pos": [
+            3237,
+            3295
+          ],
+          "resolved_by": "Gate:Open"
+        },
+        {
+          "pos": [
+            3252,
+            3314
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3251,
+            3304
+          ]
+        },
+        {
+          "pos": [
+            3253,
+            3304
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3252,
+            3311
+          ]
+        },
+        {
+          "pos": [
+            3252,
+            3311
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3248,
+            3302
+          ]
+        }
       ],
       "note": "This journey's own target was never actually reached this way -- the real route (see confirmed_paths) goes through the documented crossing at (3219,3333) instead. Kept here anyway: every hop above is a real recorded movement route.py's graph can use, and the obstacles_crossed list (several real Gates in this area) is useful data in its own right, not just a record of failure. Resolved as a live blocker 2026-09-10.",
       "timestamp": "2026-09-10T12:21:33Z"
+    },
+    {
+      "from": [
+        3237,
+        9857
+      ],
+      "to": [
+        3220,
+        9860
+      ],
+      "hops": [
+        [
+          3237,
+          9863
+        ],
+        [
+          3237,
+          9872
+        ],
+        [
+          3231,
+          9866
+        ],
+        [
+          3230,
+          9878
+        ],
+        [
+          3232,
+          9869
+        ],
+        [
+          3231,
+          9880
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3237,
+            9857
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3237,
+            9863
+          ]
+        },
+        {
+          "pos": [
+            3237,
+            9865
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3237,
+            9872
+          ]
+        },
+        {
+          "pos": [
+            3231,
+            9866
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3230,
+            9878
+          ]
+        },
+        {
+          "pos": [
+            3231,
+            9880
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3232,
+            9869
+          ]
+        },
+        {
+          "pos": [
+            3234,
+            9869
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3231,
+            9880
+          ]
+        }
+      ],
+      "timestamp": "2026-09-10T13:47:31Z",
+      "stuck_at": [
+        3234,
+        9869
+      ]
+    },
+    {
+      "from": [
+        3233,
+        9885
+      ],
+      "to": [
+        3221,
+        9888
+      ],
+      "hops": [
+        [
+          3230,
+          9869
+        ],
+        [
+          3230,
+          9869
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3233,
+            9885
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3229,
+            9870
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3230,
+            9869
+          ]
+        },
+        {
+          "pos": [
+            3232,
+            9869
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3230,
+            9869
+          ]
+        }
+      ],
+      "timestamp": "2026-09-10T13:49:07Z",
+      "stuck_at": [
+        3232,
+        9869
+      ]
     }
   ]
 }
