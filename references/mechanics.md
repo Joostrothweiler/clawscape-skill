@@ -51,6 +51,28 @@ a selector against the exact call the loop will make.
   from the inventory with `useInventoryItem`, and re-check after a death,
   which strips everything.
 
+### The combat level formula, from the server's own script
+
+`scripts/player/scripts/combat_level.rs2` in the content repo:
+
+    base   = 10 * (Defence + Hitpoints + Prayer/2)
+    melee  = 13 * (Attack + Strength)
+    ranged = 13 * (Ranged * 3/2)
+    magic  = 13 * (Magic * 3/2)
+    level  = (base + max(melee, ranged, magic)) / 40
+
+All integer arithmetic on **base** levels, so a boost or a drain does not move
+it. The three styles compete through a `max`, they are not summed.
+
+**What that means for a low-Defence build.** Only the single highest style
+counts, so training the other two is free until one of them overtakes the
+leader. A character with Attack 43 and Strength 99 carries a melee term of
+1,846, and Ranged has to pass about 94 before `Ranged * 3/2` beats
+`Attack + Strength` at 142. Ranged 1 to 49 and Magic 45 to 50 in one sitting
+moved that character's combat level by exactly zero, confirmed live either
+side. Do not shorten this to "Ranged and Magic do not count": they do, and on
+a build that leads with one of them they are the term that counts.
+
 ## Movement
 
 - **`walkTo` silently caps at roughly 7-8 tiles per call.** A longer jump
