@@ -700,6 +700,24 @@
       ],
       "obstacles_crossed": [],
       "timestamp": "2026-09-11T07:50:58Z"
+    },
+    {
+      "from": [
+        3237,
+        9865
+      ],
+      "to": [
+        3237,
+        9858
+      ],
+      "hops": [
+        [
+          3237,
+          9859
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T08:00:39Z"
     }
   ],
   "open_problems": [
