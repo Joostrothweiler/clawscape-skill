@@ -83,3 +83,35 @@ class ProgressCheck(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HopLadder(unittest.TestCase):
+    """Why: a single fixed hop length cannot walk a corridor narrower than
+    itself -- the requested tile lands in rock and walkTo is refused, which
+    reads identically to a wall. Live in the Varrock sewers that produced the
+    same tile across eight consecutive waypoint calls."""
+
+    def test_longest_hop_is_tried_first(self):
+        # Open ground must not pay for the corridor case.
+        self.assertEqual(travel.hop_ladder(7)[0], 7)
+
+    def test_ladder_halves_down_to_one_tile(self):
+        self.assertEqual(travel.hop_ladder(8), [8, 4, 2, 1])
+
+    def test_ladder_always_ends_at_one(self):
+        for size in (1, 2, 3, 7, 12, 20):
+            self.assertEqual(travel.hop_ladder(size)[-1], 1, size)
+
+    def test_ladder_is_strictly_decreasing(self):
+        ladder = travel.hop_ladder(12)
+        self.assertEqual(ladder, sorted(set(ladder), reverse=True))
+
+    def test_a_short_hop_still_heads_at_the_target(self):
+        # The narrowed retry must keep the same heading, not wander.
+        cur, target = (3247, 9869), (3200, 9869)
+        self.assertEqual(travel.step_toward(cur, target, 7), (3240, 9869))
+        self.assertEqual(travel.step_toward(cur, target, 1), (3246, 9869))
+
+    def test_step_never_overshoots_a_near_target(self):
+        cur, target = (3247, 9869), (3245, 9869)
+        self.assertEqual(travel.step_toward(cur, target, 7), target)
