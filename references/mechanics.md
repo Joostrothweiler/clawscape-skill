@@ -44,6 +44,21 @@ a selector against the exact call the loop will make.
   never-fight-back charter can still deal damage and earn combat XP this way:
   unequip the weapon rather than trusting that issuing no attack is enough.
   Observed with Ranged wielded and no arrows, which made it a harmless no-op.
+- **Safespotting does not work here, and trying it makes things worse.** The
+  classic trick of standing where a melee monster cannot reach you and
+  shooting it is not available: a Ranged attack needs a walkable path to the
+  target exactly as melee does. Attacking an NPC whose `state npcs` row says
+  `reachable: false` returns `success: true` with
+  `"unrouted - ap-range attempt"` and `routed: false`, earns **no XP**, and
+  **walks the character toward the target** trying to close the gap, which can
+  drag it somewhere worse. The same gate already applies to spells. So
+  `reachable` is not advice, it is a precondition for every attack style.
+- **Since nothing lets a low-Defence character avoid damage, budget for it.**
+  Ranged training on Guards took a 92 HP character to 45 in 28 rounds, and
+  skeletons cost about 1 HP a round. The levers that actually exist are
+  stopping earlier (`train.py --min-hp` set near two thirds of maximum, not
+  near a third), picking targets that hit for less, and carrying food. There
+  is no positional trick to substitute for the food.
 - **Check `state equipment` before blaming the monster.** It can come back
   completely empty while a sword and shield sit in the inventory, and a
   character punching Goblins bare-handed reads exactly like one that is
