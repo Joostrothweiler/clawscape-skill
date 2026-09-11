@@ -113,6 +113,11 @@ including what dying costs.
 `spellComponent` id that nothing in the game state exposes, and Magic is the
 one skill here that costs gold per cast, so it needs an income plan attached.
 
+**Read [world data](references/world_data.md) before exploring for anything.**
+This world's content is public and its map files are plain text, so a spawn
+location or a drop rate is a lookup, not a search. A session was once spent
+walking sewer corridors hunting a monster whose coordinates were in a file.
+
 ## Sustain the objective
 
 Clear level-up continuation dialogs before resuming. Two identical failures or
