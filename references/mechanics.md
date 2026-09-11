@@ -119,6 +119,13 @@ a build that leads with one of them they are the term that counts.
   - A **Stile or Fence** (a farm-boundary crossing), which uses "Climb-over,"
     not "Open" — a blocker check that only looks for "Open" will walk right
     past it without seeing it at all.
+  - An **"Odd looking wall" whose only option is Push.** A secret door, and
+    the easiest blocker of all to miss: it is not named like a door, its
+    option is not Open, and it does not read as openable in the world's own
+    loc configs, so neither a name search nor a data dump finds it. Only a
+    live `scanNearbyLocs` shows it. One at (3094, 9895) in the Edgeville
+    dungeon opens into a hidden room. If a map model says an area is sealed,
+    consider that the way through may be a wall somebody has to push.
   - A **dialog-gated border**: the Al Kharid/Lumbridge crossing has two Gate
     locs, but opening them does nothing — they're decorative. The actual
     mechanism is talking to the Border Guard NPC and clicking through the
