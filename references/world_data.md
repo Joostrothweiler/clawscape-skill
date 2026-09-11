@@ -100,3 +100,57 @@ The two lone `zombie_unarmed` spawns at (3243, 9893) and (3259, 9891) are much
 closer to the manhole ladder and confirmed live, but two spawns will not keep
 a kill loop fed. The route west to the cluster is still unsolved: `travel.py`
 narrowed its hop to 3 and still could not get out of the corridor.
+
+## What this data is not good for
+
+**Terrain overlays are not a walkability signal.** The `MAP` section's `o`
+token looked like it should mark water, and `o6` is `gungywater` in
+`pack/flo.pack`. Blocking on it marked **21 of 175 tiles a character had
+actually stood on** as impassable, including the floor of Lowe's Archery
+Emporium. An offline model built on it concluded the whole west bank of the
+river was unreachable without entering the Wilderness, which is simply false.
+Loc-derived collision validated at about 97% against the same real tiles;
+overlays did not validate at all. Use locs, ignore overlays.
+
+**Do not use this data to prove something is impossible.** Built from locs
+alone it still over-blocks interactable tiles, since a ladder, a manhole and a
+shop counter are locs you walk onto, and it treats unmapped rock as open
+floor, so a region can leak. In one dungeon band that produced 278 components,
+239 of them under 10 tiles. It is a tool for *finding* a route and for knowing
+what exists where. A negative result from it is a hypothesis to test in game,
+not an answer.
+
+**The server is the authority on reachability, and it is free to ask.** Every
+row in `state npcs` and `state locs` carries `reachable`, computed by the
+server's own pathfinder. One `walkTo` at a reachable destination does better
+pathfinding than any of this, and the worked example below is a case where it
+beat the model outright.
+
+## Worked example: two dungeons that look like one
+
+The Varrock sewers and the western section holding the `zombie2` cluster are
+**not connected**, and a session was spent walking a corridor west that does
+not go anywhere. What the map data shows is two separate components with
+roughly 80 tiles of solid wall between them, and what the world confirms is
+that the western one is the Edgeville dungeon with its own entrance:
+
+| | |
+| --- | --- |
+| Varrock sewers | Manhole (3237, 3458), ladder down to (3237, 9859) |
+| Edgeville dungeon | **Trapdoor (3097, 3468)**, Open then Climb-down, lands at (3096, 9868) |
+
+The trapdoor sits in the Edgeville graveyard, west of the river, beside a
+coffin. Getting to it from Varrock means crossing the river, which one
+`walkTo` at a reachable tile does by itself.
+
+Underground, that dungeon is itself split into pockets that do not connect at
+floor level: skeletons and giant spiders near the ladder, giant rats east
+along z 9882, and hobgoblins walled off to the north. Nature runes are in all
+three, so pick the pocket you can stand in rather than the best table:
+
+| Monster | Rate | Stack | Per kill |
+| --- | --- | --- | --- |
+| Hobgoblin | 2/128 | 4 | 0.063 |
+| Unarmed zombie | 1/128 | 6 | 0.047 |
+| Skeleton | 1/128 | 3 | 0.023 |
+| Guard | 1/128 | 1 | 0.008 |
