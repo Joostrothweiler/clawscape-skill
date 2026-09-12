@@ -198,6 +198,49 @@ a build that leads with one of them they are the term that counts.
   be genuinely unreachable; abandon it rather than spending a session's ticks
   on the last few tiles.
 
+## Deciding that something is unreachable
+
+Most of the time lost in this world is lost here, so the rules are worth
+stating separately from the movement notes above.
+
+- **A stall on a long `walkTo` proves nothing.** The same move frequently
+  succeeds in 7-tile steps: a retreat that stalled on a 38-tile jump worked
+  immediately in 8-tile hops, and breaking out of a monster pocket worked the
+  same way. Any probe whose result you intend to record as a dead end must be a
+  **short hop**, or you are measuring step size rather than terrain.
+- **Sweep a barrier, do not sample it.** Eight scattered long-jump probes are
+  not a sweep. Walk the line in small increments and test at each one. A proper
+  small-step sweep of 25 points across 100 tiles is cheap and conclusive; the
+  scattered version produced three confident false negatives in one session.
+- **Sweep on a latitude clear of aggressive monsters.** A sweep line through a
+  nest is paid for in food, and running out of food is what actually ends
+  trips. Move sideways to safe ground first, then probe north from there.
+- **The loc files over-report open ground, so absence of a wall means nothing.**
+  Lava, water and cliffs are not locs. A band of map data can contain no walls
+  at all across 80 tiles of longitude that cannot be walked. The useful
+  asymmetry: **absence of a gate in the data is meaningful** (there is nothing
+  to open), while absence of a wall is not (the ground may still be impassable).
+- **NPC coordinates are free walkability data.** Anything in `state npcs` is
+  standing on a reachable tile, so its position is a known-good destination,
+  and a cluster of NPCs beyond a barrier proves the pocket has an entrance
+  somewhere even when you cannot find it.
+- **Enumerate every spawn before choosing which to chase.** A thing with a
+  location usually has several. One agent spent most of a day reaching a chest
+  behind a level-39 locked door in the deep Wilderness while two identical
+  chests sat in a town needing nothing, because a private note said the town
+  was members-only and nobody had tested it. List all spawns from the world's
+  data, cost each route, then pick.
+- **Read a guide before brute-forcing geography.** A web search plus this
+  content pack answers "what does this place require" in two queries. Use the
+  web to form the hypothesis and the pack to confirm it, since the wikis
+  describe OSRS and this world is rev 225. Requirements in particular are
+  almost never discoverable by walking: a door that needs a level and an item
+  looks exactly like a door that is stuck.
+- **Do not truncate a search you are about to make a decision on.** The single
+  loc that unlocked a whole route was missed because a `grep | head -10` cut it
+  off, which then cost a long detour. `head` is for sampling, not for
+  concluding.
+
 ## Hitpoints and skills
 
 A skill carries two levels. The trained level, earned by experience, is the
