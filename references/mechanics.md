@@ -153,6 +153,30 @@ a build that leads with one of them they are the term that counts.
     (x≈3269-3277) by walking east at its own latitude — it is walking into
     water, which reports as "moving but not closing on the target". Go south
     to z=3227, cross, then go north.
+- **A ship is a place, and its Gangplank uses Cross.** Boarding or leaving a
+  ship is a `Gangplank` loc whose only option is **Cross**, not Open. Confirmed
+  live on both ends of the Karamja ferry: (2956, 3144) locId 2082 on the island
+  side, (3031, 3217) locId 2084 at Port Sarim. While aboard, `player.level` is
+  **1**; after crossing it reads **0**. This matters because a character that
+  has just arrived by boat is standing on the deck, not on the dock, and every
+  walk inland fails: `travel.py` reported `stuck` at the arrival tile having
+  moved zero tiles in six rounds, because it probes for Gate/Door/Stile and
+  never for Cross. If a walker is stuck on the exact tile a boat just delivered
+  it to, look for the plank before looking for a route.
+- **`travel.py` is the wrong tool on open ground, and its `stuck` is not a
+  verdict about the world.** Three times in one session it reported `stuck`,
+  and all three were crossed immediately afterwards by repeating a single
+  long-range `walkTo` and letting the server path: Karamja's coast (stuck at
+  (2916,3154); four calls to (2956,3146) got there), and the approach to
+  Falador from the south (stuck at (3037,3293); eight calls to (3015,3354) got
+  there). This is the #29 lesson from the other direction: hopping in small
+  steps is for crossing a known obstacle, and it actively fails on open terrain
+  where the server's own pathfinder would have gone around. Read a `stuck` as
+  "this tool cannot do it", then try one long walkTo before recording a dead
+  end.
+- **Approach a walled town on a line someone has already walked.** Falador has
+  no southern entrance at x=3037; the working line is x~3007-3015. An approach
+  that is merely the wrong side of a wall looks exactly like a blocked route.
 - Not every blocker is an interactable loc at all. A farm/garden area
   southwest of Draynor blocked northward travel with nothing crossable in a
   30-tile `scanNearbyLocs` — no Gate, Door, Stile or Fence anywhere in range.
@@ -459,3 +483,39 @@ Public chat and forum posts lowercase other characters' names inside the
 message text ("Morgra" comes back as "morgra"). A `privateMessage` echo shows
 the **target's** name in `sender` with `fromSelf: true` — that is your own
 message, not a reply.
+
+## Banking
+
+**One bank, readable from any town.** Items banked at Edgeville came back on the
+first read of the **Falador** booth at (3013-3015, 3354): the trout, salmon and
+shortbow were all there. So a gathering trip does not have to return to the town
+that holds the stock, and food banked anywhere is food available everywhere.
+Booths seen so far: Edgeville (3096,3492), Varrock (3253,3418), Draynor
+(3091,3242), Falador (3013-3015,3354).
+
+Open a booth with **Use-quickly** (opIndex 2). Plain "Use" dispatches
+successfully and does nothing.
+
+**`bankDeposit`'s `amount` is honoured only for stackables.** Depositing 25
+cooked Lobsters with `{"slot": n, "amount": 25}` moved **one** lobster per call
+and reported success every time, because lobsters are not a stack: each sits in
+its own inventory slot. 30 Feathers, which are a stack, went in on one call. So
+deposit non-stackables one call per item and re-read the inventory to know when
+it is done, rather than trusting a single call's `amount`.
+
+## The Karamja ferry, end to end
+
+The round trip costs **60 coins, 30 each way**, and both halves are dialogue,
+not a walk.
+
+**Outbound, Port Sarim -> Karamja.** Talk to **Captain Tobias** (3024, 3218).
+Continue twice ("Do you want to go on a trip to Karamja?", "The trip will cost
+you 30 coins."), then answer **"Yes please."**. The ship sails and lands the
+character at (2956, 3143) on the deck; cross the gangplank to reach the island.
+
+**Return, Karamja -> Port Sarim.** Talk to a **Customs officer** (2952-2953,
+3146). The dialogue is longer and it branches: choose **"Can I journey on this
+ship?"**, then **"Search away, I have nothing to hide."**, then **"Ok."** to pay
+the 30. Answering blind by always clicking option 1 walks into "Why?" and loops
+back through the explanation, which costs ticks but is recoverable. Landing is
+(3032, 3217), again on the deck.
