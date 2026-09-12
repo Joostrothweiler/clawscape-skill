@@ -43,6 +43,58 @@
     "varrock_sewer_manhole": [
       3237,
       3458
+    ],
+    "falador_bank": [
+      3015,
+      3354
+    ],
+    "falador_range": [
+      3036,
+      3342
+    ],
+    "falador_general_store": [
+      2957,
+      3386
+    ],
+    "falador_cassie_shop": [
+      2977,
+      3384
+    ],
+    "port_sarim_dock": [
+      3029,
+      3217
+    ],
+    "port_sarim_fishing_shop": [
+      3013,
+      3225
+    ],
+    "karamja_dock": [
+      2956,
+      3146
+    ],
+    "karamja_lobster_spots": [
+      2925,
+      3180
+    ],
+    "edgeville_range": [
+      3081,
+      3508
+    ],
+    "edgeville_bank": [
+      3096,
+      3492
+    ],
+    "edgeville_dungeon_trapdoor": [
+      3097,
+      3468
+    ],
+    "barbarian_village_river": [
+      3104,
+      3424
+    ],
+    "draynor_bank": [
+      3091,
+      3242
     ]
   },
   "crossings": [
@@ -84,6 +136,27 @@
       "beyond": [
         3190,
         3363
+      ]
+    },
+    {
+      "name": "ship_gangplank",
+      "mechanism": "Cross",
+      "note": "Boarding and leaving any ship is a Gangplank loc whose ONLY option is Cross (opIndex 1), not Open. Confirmed live 2026-09-12 at Karamja (2956,3144 id 2082) and Port Sarim (3031,3217 id 2084). While aboard, player.level is 1; after crossing it is 0. A walker that only probes for Gate/Door/Stile reports 'stuck' on the dock tile with no idea a ship is under it.",
+      "examples": [
+        {
+          "pos": [
+            2956,
+            3144
+          ],
+          "locId": 2082
+        },
+        {
+          "pos": [
+            3031,
+            3217
+          ],
+          "locId": 2084
+        }
       ]
     }
   ],
@@ -846,6 +919,415 @@
       ],
       "obstacles_crossed": [],
       "timestamp": "2026-09-11T08:40:15Z"
+    },
+    {
+      "from": [
+        3237,
+        3459
+      ],
+      "to": [
+        3212,
+        3454
+      ],
+      "hops": [
+        [
+          3234,
+          3465
+        ],
+        [
+          3227,
+          3458
+        ],
+        [
+          3220,
+          3454
+        ],
+        [
+          3213,
+          3454
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:23:52Z"
+    },
+    {
+      "from": [
+        3213,
+        3454
+      ],
+      "to": [
+        3212,
+        3438
+      ],
+      "hops": [
+        [
+          3212,
+          3447
+        ],
+        [
+          3212,
+          3440
+        ],
+        [
+          3212,
+          3438
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:23:59Z"
+    },
+    {
+      "from": [
+        3212,
+        3438
+      ],
+      "to": [
+        3191,
+        3437
+      ],
+      "hops": [
+        [
+          3205,
+          3437
+        ],
+        [
+          3198,
+          3437
+        ],
+        [
+          3191,
+          3437
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:24:06Z"
+    },
+    {
+      "from": [
+        3191,
+        3437
+      ],
+      "to": [
+        3173,
+        3431
+      ],
+      "hops": [
+        [
+          3186,
+          3432
+        ],
+        [
+          3179,
+          3431
+        ],
+        [
+          3173,
+          3431
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:24:12Z"
+    },
+    {
+      "from": [
+        3173,
+        3431
+      ],
+      "to": [
+        3154,
+        3426
+      ],
+      "hops": [
+        [
+          3166,
+          3426
+        ],
+        [
+          3161,
+          3424
+        ],
+        [
+          3155,
+          3426
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:24:19Z"
+    },
+    {
+      "from": [
+        3154,
+        3426
+      ],
+      "to": [
+        3131,
+        3427
+      ],
+      "hops": [
+        [
+          3147,
+          3427
+        ],
+        [
+          3141,
+          3428
+        ],
+        [
+          3134,
+          3427
+        ],
+        [
+          3131,
+          3427
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-11T10:24:28Z"
+    },
+    {
+      "from": [
+        2982,
+        3375
+      ],
+      "to": [
+        3013,
+        3222
+      ],
+      "hops": [
+        [
+          2989,
+          3368
+        ],
+        [
+          2995,
+          3364
+        ],
+        [
+          3001,
+          3358
+        ],
+        [
+          3006,
+          3353
+        ],
+        [
+          3012,
+          3347
+        ],
+        [
+          3029,
+          3340
+        ],
+        [
+          3022,
+          3337
+        ],
+        [
+          3028,
+          3336
+        ],
+        [
+          3023,
+          3331
+        ],
+        [
+          3013,
+          3328
+        ],
+        [
+          3012,
+          3322
+        ],
+        [
+          3013,
+          3315
+        ],
+        [
+          3013,
+          3308
+        ],
+        [
+          3013,
+          3301
+        ],
+        [
+          3010,
+          3296
+        ],
+        [
+          3013,
+          3289
+        ],
+        [
+          3013,
+          3282
+        ],
+        [
+          3013,
+          3275
+        ],
+        [
+          3013,
+          3268
+        ],
+        [
+          3012,
+          3262
+        ],
+        [
+          3010,
+          3256
+        ],
+        [
+          3012,
+          3250
+        ],
+        [
+          3010,
+          3244
+        ],
+        [
+          3013,
+          3243
+        ],
+        [
+          3013,
+          3240
+        ],
+        [
+          3009,
+          3235
+        ],
+        [
+          3017,
+          3231
+        ],
+        [
+          3018,
+          3222
+        ],
+        [
+          3013,
+          3222
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3012,
+            3347
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-12T07:56:14Z"
+    },
+    {
+      "from": [
+        2956,
+        3146
+      ],
+      "to": [
+        2925,
+        3180
+      ],
+      "hops": [
+        [
+          2955,
+          3147
+        ],
+        [
+          2946,
+          3148
+        ],
+        [
+          2939,
+          3155
+        ],
+        [
+          2939,
+          3155
+        ],
+        [
+          2925,
+          3150
+        ],
+        [
+          2921,
+          3153
+        ],
+        [
+          2921,
+          3153
+        ],
+        [
+          2916,
+          3156
+        ],
+        [
+          2923,
+          3163
+        ],
+        [
+          2925,
+          3170
+        ],
+        [
+          2925,
+          3177
+        ],
+        [
+          2925,
+          3180
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            2946,
+            3148
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2939,
+            3155
+          ]
+        },
+        {
+          "pos": [
+            2939,
+            3155
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2925,
+            3150
+          ]
+        },
+        {
+          "pos": [
+            2925,
+            3150
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2921,
+            3153
+          ]
+        },
+        {
+          "pos": [
+            2923,
+            3153
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2921,
+            3153
+          ]
+        }
+      ],
+      "timestamp": "2026-09-12T08:04:01Z"
     }
   ],
   "open_problems": [
@@ -1273,6 +1755,435 @@
         3243,
         9884
       ]
+    },
+    {
+      "from": [
+        3131,
+        3427
+      ],
+      "to": [
+        3109,
+        3429
+      ],
+      "hops": [
+        [
+          3124,
+          3429
+        ],
+        [
+          3118,
+          3430
+        ],
+        [
+          3117,
+          3429
+        ],
+        [
+          3115,
+          3428
+        ],
+        [
+          3116,
+          3435
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3115,
+            3428
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3116,
+            3435
+          ]
+        },
+        {
+          "pos": [
+            3116,
+            3437
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3115,
+            3449
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-11T10:25:14Z",
+      "stuck_at": [
+        3115,
+        3449
+      ]
+    },
+    {
+      "from": [
+        3109,
+        3442
+      ],
+      "to": [
+        3101,
+        3449
+      ],
+      "hops": [
+        [
+          3107,
+          3445
+        ],
+        [
+          3110,
+          3454
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3107,
+            3445
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3110,
+            3454
+          ]
+        },
+        {
+          "pos": [
+            3109,
+            3455
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3113,
+            3449
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-11T10:26:46Z",
+      "stuck_at": [
+        3113,
+        3449
+      ]
+    },
+    {
+      "from": [
+        2956,
+        3143
+      ],
+      "to": [
+        2925,
+        3180
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-12T08:02:46Z",
+      "stuck_at": [
+        2956,
+        3143
+      ],
+      "note": "NOT a dead end. The character was still standing ON THE SHIP: the Karamja dock loc is a Gangplank at (2956,3144) whose only option is CROSS. Cross it (player 'level' goes 1 -> 0) and the walk inland works normally. travel.py cannot see this because it probes for Gate/Door/Stile, not Cross.",
+      "resolved": true
+    },
+    {
+      "from": [
+        2924,
+        3179
+      ],
+      "to": [
+        2951,
+        3147
+      ],
+      "hops": [
+        [
+          2926,
+          3175
+        ],
+        [
+          2928,
+          3171
+        ],
+        [
+          2932,
+          3163
+        ],
+        [
+          2919,
+          3154
+        ],
+        [
+          2917,
+          3152
+        ],
+        [
+          2917,
+          3152
+        ],
+        [
+          2917,
+          3152
+        ],
+        [
+          2917,
+          3152
+        ],
+        [
+          2917,
+          3152
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            2932,
+            3163
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2919,
+            3154
+          ]
+        },
+        {
+          "pos": [
+            2917,
+            3154
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2917,
+            3152
+          ]
+        },
+        {
+          "pos": [
+            2916,
+            3154
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2917,
+            3152
+          ]
+        },
+        {
+          "pos": [
+            2916,
+            3154
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2917,
+            3152
+          ]
+        },
+        {
+          "pos": [
+            2916,
+            3154
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2917,
+            3152
+          ]
+        },
+        {
+          "pos": [
+            2916,
+            3154
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            2917,
+            3152
+          ]
+        }
+      ],
+      "timestamp": "2026-09-12T08:09:35Z",
+      "stuck_at": [
+        2916,
+        3154
+      ],
+      "note": "NOT a dead end. travel.py's hop-and-sidestep cycles on Karamja's open coast. Repeating ONE long-range walkTo at (2956,3146) covered the same ground in 4 calls immediately afterwards. This is the #29 lesson again: on open ground let the server path, do not hop.",
+      "resolved": true
+    },
+    {
+      "from": [
+        3029,
+        3217
+      ],
+      "to": [
+        3037,
+        3348
+      ],
+      "hops": [
+        [
+          3021,
+          3217
+        ],
+        [
+          3026,
+          3224
+        ],
+        [
+          3028,
+          3226
+        ],
+        [
+          3028,
+          3234
+        ],
+        [
+          3031,
+          3247
+        ],
+        [
+          3033,
+          3254
+        ],
+        [
+          3041,
+          3261
+        ],
+        [
+          3036,
+          3267
+        ],
+        [
+          3039,
+          3272
+        ],
+        [
+          3037,
+          3278
+        ],
+        [
+          3036,
+          3284
+        ],
+        [
+          3036,
+          3290
+        ],
+        [
+          3037,
+          3291
+        ],
+        [
+          3037,
+          3294
+        ],
+        [
+          3037,
+          3296
+        ],
+        [
+          3035,
+          3288
+        ],
+        [
+          3035,
+          3288
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3029,
+            3217
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3021,
+            3217
+          ]
+        },
+        {
+          "pos": [
+            3019,
+            3217
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3028,
+            3234
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3036,
+            3290
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3037,
+            3296
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3035,
+            3288
+          ]
+        },
+        {
+          "pos": [
+            3035,
+            3286
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3037,
+            3293
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3037,
+            3296
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3035,
+            3288
+          ]
+        },
+        {
+          "pos": [
+            3035,
+            3286
+          ],
+          "resolved_by": "Door:Open"
+        },
+        {
+          "pos": [
+            3037,
+            3293
+          ],
+          "resolved_by": "Door:Open"
+        }
+      ],
+      "timestamp": "2026-09-12T08:16:10Z",
+      "stuck_at": [
+        3037,
+        3293
+      ],
+      "note": "NOT a dead end, it is the wrong approach line. Falador cannot be entered from the south at x=3037. The working line is x~3007-3015: repeated long-range walkTo at (3015,3354) went (3035,3282) -> (3013,3285) -> (3007,3327) -> (3014,3355) in 8 calls.",
+      "resolved": true
     }
   ]
 }
