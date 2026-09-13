@@ -83,3 +83,24 @@ lost most of a day to the Wilderness chest because a private note claimed
 Ardougne was members-only and nobody had tested it. The map squares from Falador
 to Ardougne form an unbroken chain, so that claim is still untested rather than
 confirmed. **Test the cheap route before paying for the expensive one.**
+
+
+## Known gap: nothing here navigates indoors
+
+`trek.py`, `maze.py` and `walk.py` all plan over the MAP section's level-0
+terrain flags and the LOC data. That covers outdoor ground well and **does not
+cover building interiors or upper floors at all**.
+
+Observed at both Ardougne nature rune chests, 2026-09-13. A character stood
+**one tile** from the Ardougne Castle ladder at (2617,3315) and got
+"I can't reach that!", because an interior wall sits between them and nothing
+in the planner models it. The same happened at (2671,3303), two tiles from the
+chest. Multi-tile `walkTo` inside a building usually fails outright, so the only
+thing that works today is stepping one tile at a time and reading `reachable`
+live -- and `reachable` is itself unreliable, having been false for a bank booth
+that then worked fine.
+
+**So indoor objectives currently need hand-navigation**, and a route that ends
+"go upstairs and open the chest" is not finished when the character reaches the
+building. Worth building: a planner that reads the LOC data for a specific
+level rather than assuming level 0, and that treats doors as edges.
