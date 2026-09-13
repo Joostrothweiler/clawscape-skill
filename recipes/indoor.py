@@ -126,10 +126,17 @@ def try_open(character, state, here, want):
         if at not in (here, want):
             continue
         name = (loc.get("name") or "").lower()
-        if not any(w in name for w in OPENABLE):
+        # Match by id as well, because the doors that matter most are nameless
+        # in loc.pack and report only a generic live name.
+        if not (
+            any(w in name for w in OPENABLE) or loc.get("id") in mapdata.PASSABLE_IDS
+        ):
             continue
         for opt in loc.get("optionsWithIndex") or []:
-            if (opt.get("text") or "").lower() != "open":
+            # "Pick Lock" matters as much as "Open": several doors here are
+            # locked and want a Thieving level rather than a key, and a
+            # requirement-gated passage is not a wall.
+            if (opt.get("text") or "").lower() not in ("open", "pick lock"):
                 continue
             walk.cli(
                 character,
