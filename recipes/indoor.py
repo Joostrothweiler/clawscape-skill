@@ -105,6 +105,9 @@ def approach_tiles(loc, edges, blocked):
 
 OPENABLE = ("door", "gate")
 
+# A lock pick is a roll. Two failures then a success is normal.
+PICK_TRIES = 8
+
 
 def try_open(character, state, here, want):
     """Open a closed door or gate standing between two tiles. Returns True if
@@ -132,30 +135,48 @@ def try_open(character, state, here, want):
             any(w in name for w in OPENABLE) or loc.get("id") in mapdata.PASSABLE_IDS
         ):
             continue
-        for opt in loc.get("optionsWithIndex") or []:
-            # "Pick Lock" matters as much as "Open": several doors here are
-            # locked and want a Thieving level rather than a key, and a
-            # requirement-gated passage is not a wall.
-            if (opt.get("text") or "").lower() not in ("open", "pick lock"):
+        # Try EVERY way in, in order, not just the first that matches. A locked
+        # door offers both "Open" and "Pick Lock"; "Open" answers "This door is
+        # locked." and stopping there loops forever. That cost 20 replans.
+        options = {
+            (o.get("text") or "").lower(): o.get("opIndex", 1)
+            for o in loc.get("optionsWithIndex") or []
+        }
+        for verb in ("open", "pick lock"):
+            if verb not in options:
                 continue
-            walk.cli(
-                character,
-                "act",
-                "interactLoc",
-                "--json",
-                json.dumps(
-                    {
-                        "locId": loc.get("id"),
-                        "x": at[0],
-                        "z": at[1],
-                        "optionIndex": opt.get("opIndex", 1),
-                    }
-                ),
-            )
-            walk.cli(character, "wait", "3")
-            emit(opened=loc.get("name"), id=loc.get("id"), at=list(at))
-            opened = True
-            break
+            # Picking a lock is a roll, not a command -- it fails often enough
+            # that one attempt proves nothing. Observed: two failures then
+            # "You manage to pick the lock."
+            tries = PICK_TRIES if verb == "pick lock" else 1
+            for _ in range(tries):
+                walk.cli(
+                    character,
+                    "act",
+                    "interactLoc",
+                    "--json",
+                    json.dumps(
+                        {
+                            "locId": loc.get("id"),
+                            "x": at[0],
+                            "z": at[1],
+                            "optionIndex": options[verb],
+                        }
+                    ),
+                )
+                walk.cli(character, "wait", "3")
+                now, d2 = walk.settled(character)
+                said = " ".join(
+                    (m.get("text") or "") for m in (d2.get("gameMessages") or [])[-2:]
+                ).lower()
+                if "manage to pick" in said or "go through" in said or now != here:
+                    emit(
+                        opened=loc.get("name"), id=loc.get("id"), verb=verb, at=list(at)
+                    )
+                    return True
+                if "locked" in said and verb == "open":
+                    break  # locked: stop knocking, go and pick it
+            opened = opened or False
     return opened
 
 
