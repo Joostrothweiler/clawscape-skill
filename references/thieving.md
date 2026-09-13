@@ -186,6 +186,41 @@ These are the same ids as the Wilderness fence gates -- when a boundary refuses
 a single step and the terrain says open, look for a nameless loc on the tile
 and read its live options rather than searching the pack for a word.
 
+## The Ardougne Castle chest, opened 2026-09-13 -- and it is trapped
+
+`chest_nature_rune` is **loc 2567**, not 2566 (that is `chest_10_coins`, which
+sits nearby and looks identical live). Getting it wrong costs a walk.
+
+**Always use option 2, "Search for traps". Never option 1, "Open".** The chest
+is trapped: opening it blind answers *"You have activated a trap on the chest."*
+and costs health. Searching first finds the trap, disables it **and opens the
+chest in the same action** -- *"You find a trap on the chest / You disable the
+trap / You open the chest / You find treasure inside!"*. There is no reason to
+ever use Open.
+
+Loot is **1 nature rune + 3 coins, both guaranteed**, respawning every 30 ticks.
+Stand on **(2614,3315)** or (2613,3314); the chest tile itself is solid.
+
+### Getting into that room
+
+The route is not obvious and defeated several attempts, so in order from the
+castle's ground floor:
+
+1. The chest sits on **level 1**, in a 19-tile room whose only access is the
+   **ladder at (2617,3315)**. The other Ardougne Castle ladders lead to rooms
+   that do not connect to it, which is easy to waste an hour on.
+2. That ladder stands in a **sealed-looking ground-floor room**. It is not
+   sealed -- its door is **`loc_2556`**, a Thieving 13 lock, and it is
+   **nameless in `loc.pack`**, so it is invisible to any search for "door".
+3. **Picking a lock is a roll, not a command.** `Pick Lock` failed twice and
+   succeeded on the third attempt. One failure proves nothing; retry.
+4. A plain `Door` (loc 1530) on the way also needs opening, and `Open` on a
+   *locked* door answers *"This door is locked."* -- so try `Open` first and
+   fall through to `Pick Lock` rather than stopping at the first verb.
+
+`recipes/indoor.py --use 2567,2614,3314` does all of this, including choosing
+which tile to stand on.
+
 ## The (2671,3301) chest needs more than Thieving 28
 
 The chest is on **level 1**, and its room is reached by the **Staircase at
