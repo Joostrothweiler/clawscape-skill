@@ -40,6 +40,30 @@ def emit(**kw):
     print(json.dumps(kw, separators=(",", ":")), flush=True)
 
 
+def state_or_reconnect(character, tries=3):
+    """Read state, reconnecting on a dropped session instead of dying.
+
+    `walk.state()` raises SystemExit after a few failed reads, which is right
+    for a one-shot walk and fatal for a loop meant to run for an hour. A single
+    blip killed a farm at round 300 of 400: the session came back seconds later
+    and nothing was left running to notice.
+
+    A long-running harvester has to treat a lost session as weather, not as an
+    ending.
+    """
+    for attempt in range(tries):
+        try:
+            d = walk.state(character)
+            if d:
+                return d
+        except SystemExit:
+            pass
+        emit(reconnecting=attempt + 1)
+        walk.cli(character, "connect", "--character", character)
+        walk.cli(character, "wait", "3")
+    return None
+
+
 def count(state, name):
     if not name:
         return 0
@@ -53,7 +77,9 @@ def count(state, name):
 def wait_for_loc(character, loc_id, x, z, tries=40):
     """Poll until the loc is present. Returns the state that saw it, or None."""
     for _ in range(tries):
-        d = walk.state(character)
+        d = state_or_reconnect(character)
+        if d is None:
+            return None
         for loc in d.get("nearbyLocs") or []:
             if loc.get("id") == loc_id and (loc.get("x"), loc.get("z")) == (x, z):
                 return d
@@ -74,8 +100,8 @@ def main(argv):
     a = ap.parse_args(argv)
 
     loc_id, x, z = (int(v) for v in a.loc.split(","))
-    d = walk.state(a.character)
-    start = count(d, a.want)
+    d = state_or_reconnect(a.character)
+    start = count(d, a.want) if d else 0
     t0 = time.time()
     misses = 0
 
@@ -104,7 +130,10 @@ def main(argv):
         walk.cli(a.character, "wait", "3")
 
         if r % a.report_every == 0:
-            d = walk.state(a.character)
+            d = state_or_reconnect(a.character)
+            if d is None:
+                emit(harvest="stopped", reason="could not reconnect")
+                break
             have = count(d, a.want)
             el = max(time.time() - t0, 1)
             emit(
@@ -120,8 +149,8 @@ def main(argv):
             if have == before and r > a.report_every:
                 emit(warn="no yield in the last round", have=have)
 
-    d = walk.state(a.character)
-    have = count(d, a.want)
+    d = state_or_reconnect(a.character)
+    have = count(d, a.want) if d else 0
     el = max(time.time() - t0, 1)
     emit(
         harvest="done",
