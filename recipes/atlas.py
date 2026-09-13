@@ -122,6 +122,28 @@ def _autofold():
 # ---------------------------------------------------------------- observing
 
 
+# The world's real extent, read off the content pack's map squares (m29_20 to
+# m53_161). Anything outside this is not a place -- it is a malformed state read.
+#
+# This exists because tile "1,1" reached the shared atlas and was recorded as
+# walkable ground that two separate reads agreed on. A planner has no way to
+# tell that from a real tile, so one bad read becomes a permanent phantom in
+# every agent's map. Note the bounds are deliberately wide: z runs to 10367
+# because high-z regions ARE real world here, and an earlier guess that they
+# were junk nearly deleted 24 legitimate tiles.
+WORLD_X = (1856, 3455)
+WORLD_Z = (1280, 10367)
+
+
+def in_world(tile):
+    """True if a tile could exist. Used to keep bad reads out of the atlas."""
+    try:
+        x, z = int(tile[0]), int(tile[1])
+    except (TypeError, ValueError, IndexError):
+        return False
+    return WORLD_X[0] <= x <= WORLD_X[1] and WORLD_Z[0] <= z <= WORLD_Z[1]
+
+
 def observe(state, stood=None, refused=None, reason=None, path=OBSERVATIONS):
     """Append what a live state read shows. Cheap, lossy, called constantly.
 
@@ -135,9 +157,9 @@ def observe(state, stood=None, refused=None, reason=None, path=OBSERVATIONS):
     p = state.get("player") or {}
     if stood is None and "worldX" in p:
         stood = [p["worldX"], p["worldZ"]]
-    if stood:
+    if stood and in_world(stood):
         rec["stood"] = list(stood)
-    if refused:
+    if refused and in_world(refused):
         rec["refused"] = list(refused)
         rec["reason"] = reason
 
