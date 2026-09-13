@@ -41,6 +41,7 @@ how the next agent finds them.
 """
 
 import argparse
+import atexit
 import fcntl
 import json
 import os
@@ -101,6 +102,23 @@ def tile_key(x, z):
     return f"{x},{z}"
 
 
+_autofold_armed = False
+
+
+def _autofold():
+    """Fold whatever this process observed, however it exits.
+
+    Folding used to be a step someone had to remember at the end of a session,
+    which meant a crash, a timeout or a distracted operator threw the session's
+    map away. Any process that observes now folds its own observations on exit,
+    so the only way to lose them is for the machine to die outright.
+    """
+    try:
+        fold()
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------- observing
 
 
@@ -145,6 +163,10 @@ def observe(state, stood=None, refused=None, reason=None, path=OBSERVATIONS):
         )
     if not (rec.get("stood") or rec.get("refused") or rec["locs"] or rec["npcs"]):
         return
+    global _autofold_armed
+    if not _autofold_armed:
+        atexit.register(_autofold)
+        _autofold_armed = True
     try:
         with open(path, "a") as fh:
             fh.write(json.dumps(rec, separators=(",", ":")) + "\n")
@@ -333,6 +355,44 @@ def unnamed(atlas=None, min_seen=1):
     return out
 
 
+def _stranded(path=OBSERVATIONS):
+    """Observations written but never folded. Should always be 0."""
+    try:
+        with open(path) as fh:
+            return sum(1 for line in fh if line.strip())
+    except Exception:
+        return 0
+
+
+def _close():
+    """One command for the end of a session, so there are not four to forget."""
+    folded = fold()
+    atlas = _load()
+    todo = unnamed(atlas)
+    edge = frontier(atlas, limit=3)
+    print(
+        json.dumps(
+            {
+                "folded": folded,
+                "tiles_known": len(atlas["tiles"]),
+                "objects_known": len(atlas["objects"]),
+                "needs_naming": todo[:10],
+                "next_frontier": edge,
+                "now_commit": [
+                    "git add recipes/atlas.json recipes/routes.json",
+                    "git commit -m 'recipes: <what this session learned>'",
+                    "merge upstream/main first; both files are shared, so merge, "
+                    "never overwrite, and check the result is additive",
+                ],
+                "reminder": "name anything in needs_naming before committing -- an "
+                "unnamed object is one the next agent works out from scratch",
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
 # -------------------------------------------------------------------- CLI
 
 
@@ -341,6 +401,11 @@ def _cli(argv):
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("fold", help="merge the observation log into the atlas")
+    sub.add_parser(
+        "close",
+        help="end-of-session: fold, list what needs naming, "
+        "show the frontier, print what to commit",
+    )
     sub.add_parser("brief", help="what is known, and where the gaps are")
     sub.add_parser("coverage", help="tiles known per map square")
 
@@ -429,6 +494,9 @@ def _cli(argv):
         _update(mut)
         print(json.dumps({"crossing": a.id, "verb": a.verb}))
         return 0
+
+    if a.cmd == "close":
+        return _close()
 
     # brief
     atlas = _load()
