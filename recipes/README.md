@@ -228,3 +228,59 @@ did, promised or became belongs in its own journal instead — see
 [identity](../references/identity.md) — and a recipe that runs long enough to
 be worth remembering can add a line with
 `clawscape.py identity note episode --text "..."`.
+
+## Navigating terrain that refuses to be walked
+
+Three recipes were added after one character spent most of a day concluding
+that a region was impassable when it was not. They are the other half of
+[`travel.py`](travel.py) and [`route.py`](route.py).
+
+### [`mapdata.py`](mapdata.py) — ask the world where something is
+
+A library and CLI over the content pack that
+[world_data.md](../references/world_data.md) describes. Clone it once and point
+`$CLAWSCAPE_CONTENT` at it.
+
+    python3 recipes/mapdata.py spawns 53 --section NPC     # every red dragon
+    python3 recipes/mapdata.py spawns 1597                 # every gate of that id
+    python3 recipes/mapdata.py band 3195 3230 3895 3910 --names-only
+
+**Use `--names-only` before you grep for a word.** Many locs have **no name**:
+the Wilderness fence gates are `loc_1596`/`loc_1597` with no entry in
+`loc.pack`, so searching for "gate", "door" or "stile" returns nothing and
+invites the conclusion that no opening exists. Reading the distinct-name list
+finds them. The same habit surfaces `railing` as the fence and `lavabubbles` as
+the real obstacle.
+
+**And check the route for what will kill you** before pointing anything at a
+destination: `spawns 53/54/55 --section NPC` for red, black and blue dragons.
+
+### [`walk.py`](walk.py) — travel, and write down what you walked
+
+One long `walkTo` per leg, letting the server path, which is right for open
+ground where `travel.py`'s small hops are wrong. It records every hop through
+`travel.py`'s own `record()`, so the walk feeds `route.py`'s graph.
+
+    python3 recipes/walk.py --character NAME \
+        --waypoints "3060,3545;3100,3645;3140,3745" --min-hp 60
+
+**A walker that does not log is worse than useless.** Several hundred tiles were
+once explored with a private walker that wrote nothing; `route.py` then answered
+`unmapped_destination` and the whole route was lost. It also never reads
+position mid-walk — `state` during a walk reports a tile being passed through,
+and deciding on those coordinates produces phantom "it went backwards" results.
+
+### [`maze.py`](maze.py) — cross a field of obstacles, and learn it
+
+For ground that is not a wall with a gap but scattered obstacles with walkable
+tiles between them. It plans a BFS over `mapdata.blocked()` and walks it a tile
+at a time; every tile the world actually refuses is written to a persistent
+learned-blocked set and the path is replanned around it.
+
+    python3 recipes/maze.py --character NAME --to "3201,3853" --min-hp 60
+
+**Replanning without learning is a loop**: the identical plan stalls on the
+identical tile, forever. The learned set is what converges, and it is kept
+between runs, so a region gets cheaper each time anyone crosses it. This is what
+finally crossed the Lava Maze after long-range walks, short hops and hand-rolled
+pathfinders had all failed.
