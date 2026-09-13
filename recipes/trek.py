@@ -201,6 +201,79 @@ def detour(character, goal, content, budget, min_hp):
     return last
 
 
+def nearest_road(at, content, radius=25):
+    """The closest road tile, or None. Roads are the world's own walkways."""
+    try:
+        box = (at[0] - radius, at[0] + radius, at[1] - radius, at[1] + radius)
+        road = mapdata.roads(box[0], box[1], box[2], box[3], content)
+        blocked = mapdata.terrain_blocked(box[0], box[1], box[2], box[3], content)
+        road -= blocked
+        if not road:
+            return None
+        return min(road, key=lambda t: abs(t[0] - at[0]) + abs(t[1] - at[1]))
+    except Exception:
+        return None
+
+
+def diagnose(at, goal, content):
+    """Say WHY a trek stuck here, using everything the map knows.
+
+    A scout that reports only "stuck at (2639,3354)" teaches the next scout
+    nothing: the coordinate is a fact about one journey, not about the world.
+    The next character arrives, tries the same direction, and spends the same
+    hour.
+
+    Everything needed to explain it is now readable -- terrain flags, water
+    overlays, and the road network -- so a failure can leave behind a reason
+    instead of a coordinate. Written after a character spent an hour pinned on
+    an Ardougne riverbank with a road three tiles west of her.
+    """
+    out = {"at": list(at)}
+    try:
+        box = (at[0] - 12, at[0] + 12, at[1] - 12, at[1] + 12)
+        blocked = mapdata.terrain_blocked(box[0], box[1], box[2], box[3], content)
+        road = mapdata.roads(box[0], box[1], box[2], box[3], content)
+        ov = mapdata.overlay_map(box[0], box[1], box[2], box[3], content)
+        ring = [
+            (at[0] + dx, at[1] + dz) for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        ]
+        out["neighbours_blocked"] = [list(t) for t in ring if t in blocked]
+        out["overlays_around"] = sorted({ov[t] for t in ring + [tuple(at)] if t in ov})
+        out["water_adjacent"] = any(
+            ov.get(t) in mapdata.BLOCKING_OVERLAYS for t in ring
+        )
+        if road:
+            near = min(road, key=lambda t: abs(t[0] - at[0]) + abs(t[1] - at[1]))
+            out["nearest_road"] = list(near)
+            out["road_distance"] = abs(near[0] - at[0]) + abs(near[1] - at[1])
+        out["goal_bearing"] = [goal[0] - at[0], goal[1] - at[1]]
+    except Exception as exc:
+        out["diagnose_failed"] = str(exc)[:80]
+    return out
+
+
+def leave_scout_note(at, goal, content, legs, detours, replans):
+    """Write the diagnosis into the shared atlas, so the next scout inherits it."""
+    try:
+        note = diagnose(at, goal, content)
+        note.update(
+            {
+                "kind": "trek_stuck",
+                "legs": legs,
+                "detours": detours,
+                "replans": replans,
+            }
+        )
+
+        def mutate(a):
+            a.setdefault("notes", {})["stuck_%d_%d" % (at[0], at[1])] = note
+
+        atlas._update(mutate)
+        emit(scout_note=note)
+    except Exception as exc:  # a lost note must never end a journey
+        emit(warn="could not leave scout note", detail=str(exc)[:80])
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--character", required=True)
@@ -243,6 +316,7 @@ def main(argv):
     legs_walked = 0
     replans = 0
     stale = 0
+    road_rescue_tried = False
     route = []
 
     def replan(frm):
@@ -367,6 +441,29 @@ def main(argv):
                 replans=replans,
                 note="leg, detour and replan all failed to close the gap",
             )
+            leave_scout_note(after, goal, a.content, legs_walked, detours, replans)
+            # Before giving up, head for the road. The world was built to be
+            # walked on roads, and a stuck trek is usually stuck in the scrub
+            # beside one -- a character pinned on an Ardougne riverbank for an
+            # hour had road three tiles west of her the whole time. Road is
+            # overlay 10, carrying 158 walked tiles against 5 refusals, the
+            # most reliable surface there is.
+            if not road_rescue_tried:
+                road_rescue_tried = True
+                spot = nearest_road(after, a.content)
+                if spot and spot != after:
+                    path = plan_offline(after, spot, a.content)
+                    if path:
+                        emit(
+                            road_rescue=list(spot),
+                            tiles=len(path),
+                            note="heading for the road, then resuming",
+                        )
+                        route = thin(path, a.stride)
+                        best = abs(after[0] - goal[0]) + abs(after[1] - goal[1])
+                        stale = 0
+                        replans = 0
+                        continue
             return 1
         emit(replanning=replans, frm=list(after))
         route = replan(after)
