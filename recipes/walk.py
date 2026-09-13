@@ -30,6 +30,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import atlas  # noqa: E402
 from travel import record  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -59,16 +60,23 @@ def state(character):
 
 
 def settled(character, tries=6):
-    """Position, read only once it stops changing between polls."""
+    """Position, read only once it stops changing between polls.
+
+    Every settled read is also an observation: the atlas grows as a side effect
+    of walking, so nobody has to remember to record anything.
+    """
     last = None
     for _ in range(tries):
         d = state(character)
         p = (d["player"]["worldX"], d["player"]["worldZ"])
         if p == last:
+            atlas.observe(d, stood=list(p))
             return p, d
         last = p
         cli(character, "wait", "3")
-    return last, state(character)
+    d = state(character)
+    atlas.observe(d, stood=list(last) if last else None)
+    return last, d
 
 
 def emit(**kw):
@@ -116,6 +124,14 @@ def leg(character, target, min_hp, food, calls, tol, stall_limit=4):
         else:
             stalls += 1
             if stalls >= stall_limit:
+                # a leg that stopped closing is evidence about the next tile,
+                # not proof: atlas only believes a block after repeats
+                atlas.observe(
+                    state(character),
+                    stood=list(after),
+                    refused=[tx, tz],
+                    reason="leg stalled",
+                )
                 return False, hops, after
     final, _ = settled(character)
     return (abs(final[0] - tx) <= tol and abs(final[1] - tz) <= tol), hops, final

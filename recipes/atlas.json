@@ -1,0 +1,2314 @@
+{
+  "crossings": {
+    "1530": {
+      "note": "Ordinary door",
+      "verb": "Open"
+    },
+    "1596": {
+      "note": "Wilderness fence gate",
+      "verb": "Open"
+    },
+    "1597": {
+      "note": "Wilderness fence gate",
+      "verb": "Open"
+    },
+    "2082": {
+      "note": "Gangplank; not Open",
+      "verb": "Cross"
+    },
+    "2084": {
+      "note": "Gangplank; not Open",
+      "verb": "Cross"
+    },
+    "2558": {
+      "note": "Requirement-gated, NOT impassable",
+      "requires": "Thieving 39 + lockpick",
+      "verb": "Open"
+    },
+    "733": {
+      "note": "Any slash weapon; retry on failure",
+      "verb": "Slash"
+    }
+  },
+  "notes": {},
+  "objects": {
+    "1596": {
+      "alias": "wilderness_fence_gate_r",
+      "kind": "gate",
+      "names": [],
+      "note": "Nameless in loc.pack. 10 spawns; the deep-Wilderness one at (3224,3904) is the way past the Lava Maze. Searching 'gate' will NOT find it.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "1597": {
+      "alias": "wilderness_fence_gate_l",
+      "kind": "gate",
+      "names": [],
+      "note": "Nameless in loc.pack. Pairs with 1596. Also Taverley (2933,3320) and the z3856 fence.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "1814": {
+      "alias": "wildinlever",
+      "kind": "lever",
+      "names": [],
+      "note": "Ardougne (2561,3311). The only such lever in this revision; no Edgeville one.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "1815": {
+      "alias": "wildoutlever",
+      "kind": "lever",
+      "names": [],
+      "note": "Deserted Keep (3153,3923). Pull teleports to (2562,3311) Ardougne.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "2082": {
+      "alias": "ship_gangplank_karamja",
+      "kind": "gangplank",
+      "names": [],
+      "note": "Cross, not Open. player.level reads 1 aboard, 0 ashore.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "2084": {
+      "alias": "ship_gangplank_port_sarim",
+      "kind": "gangplank",
+      "names": [],
+      "note": "Cross, not Open.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "2213": {
+      "alias": "bank_booth",
+      "kind": "bank",
+      "names": [],
+      "note": "Open with Use-quickly (opIndex 2). Plain 'Use' dispatches and does nothing.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "2558": {
+      "alias": "hideout_door_locked",
+      "kind": "door",
+      "names": [],
+      "note": "Pirates' Hideout. Thieving 39 AND a lockpick. Not a wall.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "2567": {
+      "alias": "chest_nature_rune",
+      "kind": "chest",
+      "names": [],
+      "note": "Thieving 28, 250xp, 30-tick respawn, guaranteed nature rune. Faces INWARD: unreachable from outside the compound wall.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    },
+    "733": {
+      "alias": "web_slashable",
+      "kind": "web",
+      "names": [],
+      "note": "Slash with any slash weapon. Probabilistic: 5 failures before one cut. 'You fail to cut through it' means retry, not wrong tool.",
+      "options": [],
+      "samples": [],
+      "seen": 0
+    }
+  },
+  "tiles": {
+    "1,1": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2916,3154": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2916,3156": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2917,3152": {
+      "block": 0,
+      "reason": null,
+      "walk": 5
+    },
+    "2919,3154": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2921,3153": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2923,3163": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2924,3179": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2925,3150": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2925,3170": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2925,3177": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2925,3180": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2926,3175": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2928,3171": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2932,3163": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2939,3155": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2946,3148": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2955,3147": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2956,3143": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2956,3146": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2982,3375": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2989,3368": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "2995,3364": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3001,3358": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3006,3353": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3009,3235": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3010,3244": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3010,3256": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3010,3296": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3012,3250": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3012,3262": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3012,3322": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3012,3347": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3222": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3240": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3243": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3268": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3275": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3282": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3289": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3301": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3308": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3315": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3013,3328": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3017,3231": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3018,3222": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3021,3217": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3022,3337": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3023,3331": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3026,3224": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3028,3226": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3028,3234": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3028,3336": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3029,3217": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3029,3340": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3031,3247": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3033,3254": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3035,3288": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3036,3267": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3036,3284": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3036,3290": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3037,3278": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3037,3291": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3037,3293": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3037,3294": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3037,3296": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3039,3272": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3041,3261": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3042,3948": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3046,3947": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3048,3512": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3050,3450": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3050,3486": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3050,3495": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3050,3515": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3050,3945": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3052,3468": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3052,3470": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3055,3395": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3055,3948": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3056,3440": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3056,3535": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3059,3413": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3060,3545": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3060,3944": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3061,3461": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3064,3558": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3065,3950": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3069,3424": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3070,3566": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3070,3876": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3070,3942": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3072,3475": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3072,3582": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3075,3952": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3080,3590": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3080,3595": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3080,3609": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3080,3938": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3081,3485": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3082,3486": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3082,3945": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3085,3874": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3085,3955": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3086,3952": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3090,3620": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3090,3628": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3092,3490": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3093,3886": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3094,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3095,3935": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3095,3956": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3096,3492": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3100,3645": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3100,3650": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3100,3838": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3100,3872": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3101,3449": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3105,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3106,3672": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3107,3445": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3109,3429": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3109,3442": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3110,3454": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3110,3670": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3110,3833": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3111,3881": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3113,3449": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3115,3428": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3115,3449": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3115,3695": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3116,3435": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3117,3429": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3117,3870": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "3118,3430": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3118,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3119,3956": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3120,3686": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3120,3695": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3121,3830": {
+      "block": 0,
+      "reason": null,
+      "walk": 5
+    },
+    "3124,3429": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3124,3715": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3130,3720": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3130,3872": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3130,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3131,3427": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3132,3735": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3132,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3134,3427": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3138,3908": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3140,3745": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3140,3755": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3140,3825": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3140,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3141,3428": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3141,3775": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3141,3796": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3144,3815": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3145,3750": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3145,3766": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3145,3906": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3145,3956": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3146,3835": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3147,3427": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3147,9890": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3148,3795": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3148,3852": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3150,3790": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3150,3820": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3150,3866": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3150,3957": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3152,3845": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3153,3870": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3153,3886": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3153,3895": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3153,3902": {
+      "block": 0,
+      "reason": null,
+      "walk": 14
+    },
+    "3153,3903": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3153,3910": {
+      "block": 2,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3153,3920": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3154,3426": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3154,3910": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3155,3426": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3155,3830": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3155,3952": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3156,3858": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3160,3825": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3160,3870": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3160,3906": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3161,3424": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3161,3903": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3162,3928": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3162,3936": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3164,3921": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3164,3923": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3164,3926": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3165,3780": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3166,3426": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3166,3802": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3166,3808": {
+      "block": 0,
+      "reason": null,
+      "walk": 8
+    },
+    "3166,3818": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3166,3924": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3166,3928": {
+      "block": 0,
+      "reason": null,
+      "walk": 5
+    },
+    "3166,3932": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3167,3918": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3167,3946": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3168,3808": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3168,3830": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3168,3862": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3168,3893": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3168,3895": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3168,3903": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3168,3910": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3168,3922": {
+      "block": 2,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3168,3926": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3169,3900": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3170,3825": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3170,3860": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3170,3931": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "3170,3937": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3171,3804": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3171,3832": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "3171,3841": {
+      "block": 0,
+      "reason": null,
+      "walk": 8
+    },
+    "3171,3850": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3171,3914": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3171,3921": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "3171,3928": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3172,3795": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3173,3431": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3174,3807": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3175,3812": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3175,3850": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3176,3830": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3176,3921": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3177,3799": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3177,3810": {
+      "block": 0,
+      "reason": null,
+      "walk": 5
+    },
+    "3177,3818": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3178,3830": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3178,3836": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3178,3845": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3179,3431": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3180,3790": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3180,3795": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3180,3812": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3180,3850": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3180,3864": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3180,3928": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3182,3806": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3182,3810": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3182,3920": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3183,3893": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3184,3798": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3184,3828": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3185,3841": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3186,3432": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3186,3808": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3187,3804": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3190,3363": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3190,3805": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3190,3815": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "3190,3820": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3190,3856": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3191,3437": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3192,3866": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3192,3920": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3193,3890": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3195,3371": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3195,3834": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3196,3832": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3196,3875": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3196,3918": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3198,3437": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3198,3850": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3198,3860": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3199,3426": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3199,3846": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3200,3845": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3200,3847": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3201,3432": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3201,3434": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3201,3853": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3201,3856": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3202,3378": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3202,3432": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3202,3868": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3204,3417": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3204,3430": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3205,3417": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3205,3437": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3205,3866": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3205,3893": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3205,3914": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3206,3430": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3207,3276": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3207,3416": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3207,3418": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3208,3423": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3209,3385": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3210,3425": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3210,3428": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3210,3430": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3210,3915": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3211,3421": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3212,3424": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3212,3438": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3212,3440": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3212,3447": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3212,3878": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3213,3272": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3213,3439": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3213,3441": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3213,3454": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3213,3456": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3213,3457": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3214,3415": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3215,3415": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3215,3898": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3216,3392": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3216,3421": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3216,3425": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3216,3454": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3216,3465": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3216,3470": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3217,3415": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3218,3257": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3218,3430": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3218,3908": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3219,3327": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3219,3333": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3219,3415": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3219,3416": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3219,3429": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3219,3457": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3220,3265": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3220,3454": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3220,3890": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3220,9860": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3221,3244": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3221,9888": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3222,3218": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3222,3237": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3222,3250": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3222,3287": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3222,3466": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3222,3901": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3223,3399": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3223,3425": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3223,3447": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3223,3904": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3223,3906": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3224,3437": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3224,3900": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3224,3912": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3225,3219": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3225,3320": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3225,3410": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3226,3423": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3226,3458": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3227,3390": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3227,3458": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3227,3470": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3228,3286": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3228,3407": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3229,3286": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3230,3232": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3230,3428": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3230,9869": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3230,9878": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3231,3222": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3231,3444": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3231,9866": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3231,9880": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3232,3313": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3232,3423": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3232,9869": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3233,3421": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3233,3425": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3233,3432": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3233,3439": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3233,3446": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3233,3458": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3233,9885": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3234,3395": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3234,3453": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3234,3465": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3234,9869": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3235,3280": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3235,3286": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3235,3400": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3235,3450": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3236,3262": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3236,3429": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3236,3442": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3236,3450": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,3284": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,3295": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,3398": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,3436": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,3457": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3237,3459": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3237,9857": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,9859": {
+      "block": 0,
+      "reason": null,
+      "walk": 3
+    },
+    "3237,9863": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3237,9865": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3237,9872": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3276": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3277": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3293": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3309": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3391": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3238,3459": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3239,3269": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3239,9865": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3240,3301": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3240,9870": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3241,9891": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3242,9875": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3243,3261": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3243,3304": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3243,9872": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3243,9879": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3243,9884": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3243,9886": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3243,9893": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "3244,3262": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3244,3391": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3247,3308": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3248,3302": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3248,3393": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3251,3304": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3252,3311": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3252,3314": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3252,3400": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3252,3404": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3253,3418": {
+      "block": 1,
+      "reason": "journey logged as stuck",
+      "walk": 0
+    },
+    "3255,3209": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3259,3317": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    },
+    "3266,3310": {
+      "block": 0,
+      "reason": null,
+      "walk": 1
+    }
+  },
+  "version": 1
+}
