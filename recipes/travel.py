@@ -252,8 +252,15 @@ def find_known_crossing(routes: dict, pos: tuple):
     accept a step across the boundary, regardless of any Gate loc nearby.
     """
     for crossing in routes.get("crossings") or []:
-        xlo, xhi = crossing["x_range"]
-        zlo, zhi = crossing["z_range"]
+        # routes.json is written by every agent playing, so treat an entry
+        # that does not carry a trigger box as documentation rather than a
+        # crash: one missing x_range took the whole walker down.
+        box_x = crossing.get("x_range")
+        box_z = crossing.get("z_range")
+        if not box_x or not box_z:
+            continue
+        xlo, xhi = box_x
+        zlo, zhi = box_z
         if xlo <= pos[0] <= xhi and zlo <= pos[1] <= zhi:
             return crossing
     return None
