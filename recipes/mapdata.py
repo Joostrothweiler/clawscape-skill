@@ -107,6 +107,114 @@ def spawns(target_id, section="LOC", base=None):
     )
 
 
+def _loc_rows(base, level=None):
+    """Yield (x, z, lvl, id, shape, rotation) for LOC rows, keeping the geometry.
+
+    `_rows` throws shape and rotation away, which is most of what a LOC row
+    says. The full form is `level x z: id shape [rotation]`, and **rotation is
+    omitted when it is 0** -- a two-field row is rotation 0, not a row with
+    missing data.
+    """
+    mapdir = os.path.join(_content(base), "maps")
+    for fn in os.listdir(mapdir):
+        m = ROW.match(fn)
+        if not m:
+            continue
+        mx, mz = int(m.group(1)), int(m.group(2))
+        inside = False
+        for line in io.open(os.path.join(mapdir, fn), errors="ignore"):
+            if line.startswith("==== LOC"):
+                inside = True
+                continue
+            if line.startswith("===="):
+                if inside:
+                    break
+                continue
+            if not inside or ":" not in line:
+                continue
+            head, tail = line.split(":", 1)
+            hp, parts = head.split(), tail.split()
+            if len(hp) != 3 or not parts or not parts[0].isdigit():
+                continue
+            lvl, lx, lz = (int(v) for v in hp)
+            if level is not None and lvl != level:
+                continue
+            rid = int(parts[0])
+            shape = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+            rot = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+            yield (mx * 64 + lx, mz * 64 + lz, lvl, rid, shape, rot)
+
+
+# A wall sits on a tile EDGE, not on the tile. Rotation says which edge:
+# 0 west, 1 north, 2 east, 3 south. This is the whole reason blocked() is wrong
+# in both directions -- it marks the tile, so it forbids standing somewhere you
+# can stand and permits walking through a wall from the far side.
+_EDGE = {0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)}
+
+# Shapes that put a wall on one edge (0) or wrap a corner onto two (2).
+WALL_STRAIGHT = 0
+WALL_CORNER = 2
+# Shapes that occupy the whole tile rather than an edge.
+SOLID_SHAPES = (9, 10, 11)
+# Ground decor and roofs never block a walker.
+IGNORED_SHAPES = (12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)
+
+
+def wall_edges(x_lo, x_hi, z_lo, z_hi, level=0, base=None, passable=None):
+    """Blocked transitions as a set of ((x,z),(nx,nz)) pairs, both directions.
+
+    This is what indoor navigation needs and what `blocked()` cannot express.
+    A character standing at (2618,3315) could not reach a ladder one tile west
+    at (2617,3315): the LOC row on her own tile is `1602 0`, a timberwall of
+    shape 0 rotation 0, which is a wall on her west edge. No tile-level model
+    can say that -- both tiles are perfectly standable.
+
+    Doors are excluded, because a door is a passage with a condition, not a
+    wall. Pass `passable` to override the default name list.
+    """
+    passable = PASSABLE if passable is None else passable
+    idname = names(_content(base), "loc.pack")
+    out = set()
+    for x, z, lvl, rid, shape, rot in _loc_rows(base, level):
+        if not (x_lo <= x <= x_hi and z_lo <= z <= z_hi):
+            continue
+        if shape in IGNORED_SHAPES:
+            continue
+        nm = idname.get(rid, "loc_%d" % rid).lower()
+        if any(p in nm for p in passable):
+            continue
+        rots = ()
+        if shape == WALL_STRAIGHT:
+            rots = (rot,)
+        elif shape == WALL_CORNER:
+            rots = (rot, (rot + 1) % 4)
+        else:
+            continue
+        for r in rots:
+            dx, dz = _EDGE[r]
+            a, b = (x, z), (x + dx, z + dz)
+            out.add((a, b))
+            out.add((b, a))
+    return out
+
+
+def solid_tiles(x_lo, x_hi, z_lo, z_hi, level=0, base=None, passable=None):
+    """Tiles wholly occupied by a loc -- shapes 9, 10 and 11."""
+    passable = PASSABLE if passable is None else passable
+    idname = names(_content(base), "loc.pack")
+    out = set()
+    for x, z, lvl, rid, shape, rot in _loc_rows(base, level):
+        if shape not in SOLID_SHAPES:
+            continue
+        if not (x_lo <= x <= x_hi and z_lo <= z <= z_hi):
+            continue
+        nm = idname.get(rid, "loc_%d" % rid).lower()
+        if any(p in nm for p in passable):
+            continue
+        out.add((x, z))
+    return out
+
+
 def band(x_lo, x_hi, z_lo, z_hi, section="LOC", level=None, base=None):
     """Every (x, z, id, name) in a rectangle. `level=0` for the surface."""
     base = _content(base)
