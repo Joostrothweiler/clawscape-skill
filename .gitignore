@@ -5,3 +5,4 @@ __pycache__/
 .ruff_cache/
 recipes/routes.json.lock
 recipes/memory.jsonl
+recipes/blocked_tiles.json
