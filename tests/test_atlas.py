@@ -213,3 +213,39 @@ class BadReadsStayOutOfTheMap(unittest.TestCase):
         a = atlas._load(os.path.join(RECIPES, "atlas.json"))
         bad = [t for t in a.get("tiles", {}) if not atlas.in_world(t.split(","))]
         self.assertEqual(bad, [], "the shared atlas must contain only real tiles")
+
+
+class TerrainIsReadable(unittest.TestCase):
+    """The MAP section carries per-tile blocking flags.
+
+    Nothing read them until 2026-09-13, so every offline plan routed straight
+    through water and lava and only found out by being refused live.
+    """
+
+    def setUp(self):
+        sys.path.insert(0, RECIPES)
+        import mapdata
+
+        self.mapdata = mapdata
+
+    def test_blocked_bit_is_one(self):
+        self.assertEqual(self.mapdata.BLOCKED_BIT, 1)
+
+    def test_terrain_blocked_is_unioned_into_blocked(self):
+        src = open(os.path.join(RECIPES, "mapdata.py")).read()
+        self.assertIn(
+            "terrain_blocked(",
+            src.split("def blocked(")[1],
+            "blocked() must include terrain, or plans route through water",
+        )
+
+    def test_passable_things_are_never_blocking(self):
+        """A door matching a blocking keyword must still be passable."""
+        for name in ("inaccastledoubledoorropen", "openbankdoor_l", "wildernessgate"):
+            low = name.lower()
+            blocks = any(k in low for k in self.mapdata.BLOCKING)
+            passes = any(p in low for p in self.mapdata.PASSABLE)
+            if blocks:
+                self.assertTrue(
+                    passes, f"{name} matches a blocking keyword and must be excused"
+                )
