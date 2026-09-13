@@ -100,7 +100,28 @@ thing that works today is stepping one tile at a time and reading `reachable`
 live -- and `reachable` is itself unreliable, having been false for a bank booth
 that then worked fine.
 
-**So indoor objectives currently need hand-navigation**, and a route that ends
-"go upstairs and open the chest" is not finished when the character reaches the
-building. Worth building: a planner that reads the LOC data for a specific
-level rather than assuming level 0, and that treats doors as edges.
+**The data half of this is now solved** -- `mapdata.wall_edges()` and
+`solid_tiles()` model walls as tile edges per level, and they predicted every
+indoor refusal a character actually hit, including three in a row at Ardougne
+Castle that tile-level `blocked()` could not express.
+
+**The walking half is not.** Two things defeat a naive walker indoors:
+
+  - **`walkTo` does its own server-side pathing**, which does not consult your
+    model. Give it a tile 20 away inside a building and it usually refuses
+    outright; give it a tile your plan says is adjacent and it may route some
+    other way and land you somewhere else, quietly desynchronising the walk
+    from the plan. A path followed by firing `walkTo` at each tile in turn
+    deviates and then walks nonsense.
+  - **`reachable` on a loc is unreliable in both directions.** It was `false`
+    for a bank booth that then opened fine, and `true` for things that
+    answered "I can't reach that!".
+
+So an indoor walker has to step **one tile at a time and verify each step
+landed on the intended tile**, aborting and replanning the moment it does not.
+Nothing in the repo does that yet, and it is the piece worth building next --
+the map data underneath it is ready and tested.
+
+Also worth knowing: a **ladder or staircase tile is solid** (shape 10), so you
+never stand on it. You stand on an adjacent tile with no wall on the shared
+edge, and `wall_edges()` will tell you which of the four qualify.
