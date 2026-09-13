@@ -249,3 +249,35 @@ class TerrainIsReadable(unittest.TestCase):
                 self.assertTrue(
                     passes, f"{name} matches a blocking keyword and must be excused"
                 )
+
+
+class WallsSitOnEdgesNotTiles(unittest.TestCase):
+    """A wall loc occupies a tile EDGE, which no tile-level model can express.
+
+    Measured live: a character at (2618,3315) could not reach a ladder one tile
+    west at (2617,3315). The LOC row on her own tile is `1602 0` -- a
+    timberwall, shape 0, rotation 0, a wall on her west edge. Both tiles are
+    perfectly standable, so "which tiles are blocked" can never answer it.
+    """
+
+    def setUp(self):
+        sys.path.insert(0, RECIPES)
+        import mapdata
+
+        self.mapdata = mapdata
+
+    def test_rotation_maps_to_the_four_edges(self):
+        self.assertEqual(
+            set(self.mapdata._EDGE.values()), {(-1, 0), (0, 1), (1, 0), (0, -1)}
+        )
+
+    def test_rotation_zero_is_west(self):
+        """Rotation is omitted from a LOC row when it is 0, so 0 must be real."""
+        self.assertEqual(self.mapdata._EDGE[0], (-1, 0))
+
+    def test_ground_decor_never_blocks(self):
+        self.assertIn(22, self.mapdata.IGNORED_SHAPES)
+
+    def test_centrepieces_occupy_whole_tiles(self):
+        for shape in (9, 10, 11):
+            self.assertIn(shape, self.mapdata.SOLID_SHAPES)
