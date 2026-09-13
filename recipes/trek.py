@@ -12,14 +12,27 @@ Three recipes already cover pieces of travel and none of them covers a journey:
     covered 29 tiles in the time a `walkTo` would have covered several hundred.
 
 So a long trip currently means choosing in advance between "fast but stops at
-the first fence" and "gets there tomorrow". This picks per obstacle instead:
-stride toward the goal with `walk.py`'s leg, and the moment a leg stops closing
-the distance, hand just that obstacle to `maze.py` with a small detour budget,
-then go back to striding.
+the first fence" and "gets there tomorrow". This uses all three, in order of
+what they cost:
+
+  1. **Plan the whole corridor offline first**, by BFS over the content pack's
+     map data. Under a second for a 400x160 corridor, and it is the only step
+     that can see a wall before walking into one. A scout striding straight
+     west out of Falador stalled against the castle wall; the way around
+     starts by going *east*, which no amount of straight-line retrying finds.
+  2. **Walk the plan in long legs.** The 459-tile path becomes 19 `walkTo`
+     legs, each one the server's own pathfinding over ground already known to
+     be open.
+  3. **Spend `maze.py` only where reality disagrees with the map.** The map
+     over-reports open ground, so some planned tiles are refused live. That
+     obstacle -- and only that obstacle -- gets the expensive treatment, then
+     the plan is recomputed, because `maze.py` has just written what it
+     learned and a fresh plan is therefore a different plan.
 
 That ordering is the whole idea. Most of a journey is open ground, so most of it
-should cost one `walkTo`; the expensive method should be spent only on the few
-tiles that actually need it.
+should cost one `walkTo`; the expensive method is spent only on the few tiles
+that actually need it. `--no-plan` falls back to striding for when there is no
+content pack to plan against.
 
 Everything is recorded on the way through, because both underlying recipes
 already record: `walk.py`'s leg writes hops to routes.json, and every settled
@@ -41,6 +54,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import atlas  # noqa: E402
+import mapdata  # noqa: E402
+import maze  # noqa: E402
 import walk  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -56,6 +71,9 @@ def step_toward(here, goal, stride):
 
     Deliberately naive: the server paths around whatever is in the way, and a
     clever client-side line would just be a second, worse pathfinder.
+
+    This is the fallback for when there is no map data to plan over. Straight
+    lines walk into city walls -- see `plan_offline`.
     """
     hx, hz = here
     gx, gz = goal
@@ -64,6 +82,60 @@ def step_toward(here, goal, stride):
     if span <= stride:
         return (gx, gz)
     return (hx + round(dx * stride / span), hz + round(dz * stride / span))
+
+
+def plan_offline(here, goal, content, margin=60):
+    """BFS the whole corridor over map data before taking a single step.
+
+    Striding straight at a distant goal assumes the world between is open, and
+    cities are exactly where that assumption breaks: a scout heading west out of
+    Falador stalled against the castle wall, because the way around starts by
+    going *east*. No amount of straight-line retrying finds that.
+
+    The content pack already knows where the walls are, and BFS over it costs
+    under a second for a 400x160 corridor -- far cheaper than discovering one
+    wall at a time with a live character. So plan first, walk second.
+
+    The map over-reports open ground, and the reason is worth stating plainly:
+    **water and lava are terrain, not locs**, so `mapdata.blocked()` cannot see
+    them at all. A route straight across a river looks perfect offline. That is
+    the same shape of problem as the Lava Maze, and it is why this unions in
+    `maze.py`'s learned-blocked set: those are tiles a live character was
+    actually refused, which is the only record of terrain the loc data omits.
+
+    Without that union the plan is a constant -- replanning returns the
+    identical route and the trek stalls on the identical tile, which is exactly
+    the loop `maze.py`'s own docstring warns about. Measured live: a scout at
+    (3028,3390) could walk east, west and north but never south, because the
+    reeds south of her were water; the offline plan kept sending her south.
+
+    Returns a list of tiles, or None when the corridor is closed -- which is
+    itself worth knowing before committing a character to the trip.
+    """
+    box = (
+        min(here[0], goal[0]) - margin,
+        max(here[0], goal[0]) + margin,
+        min(here[1], goal[1]) - margin,
+        max(here[1], goal[1]) + margin,
+    )
+    blocked = mapdata.blocked(box[0], box[1], box[2], box[3], content)
+    blocked |= maze.load_learned(maze.DEFAULT_LEARNED)
+    return maze.plan(tuple(here), tuple(goal), blocked, box)
+
+
+def thin(path, stride):
+    """Every `stride`-th tile of a path, plus its end.
+
+    A 459-tile path walked tile by tile is maze.py again. Sampling it turns the
+    plan into a handful of long `walkTo` legs that the server paths between,
+    which is the fast half of this recipe.
+    """
+    if not path:
+        return []
+    picks = path[stride::stride]
+    if not picks or picks[-1] != path[-1]:
+        picks.append(path[-1])
+    return picks
 
 
 def detour(character, goal, content, budget, min_hp):
@@ -110,6 +182,12 @@ def main(argv):
     ap.add_argument("--food", default="Lobster")
     ap.add_argument("--legs", type=int, default=120, help="max legs before giving up")
     ap.add_argument("--detour-budget", type=int, default=25)
+    ap.add_argument(
+        "--no-plan",
+        action="store_true",
+        help="stride straight at the goal instead of planning over map data",
+    )
+    ap.add_argument("--replans", type=int, default=6)
     a = ap.parse_args(argv)
 
     gx, gz = (int(v) for v in a.to.split(","))
@@ -121,20 +199,53 @@ def main(argv):
     best = abs(here[0] - gx) + abs(here[1] - gz)
     detours = 0
     legs_walked = 0
+    replans = 0
+    route = []
+
+    def replan(frm):
+        """Offline path from here, thinned into walkable legs."""
+        if a.no_plan:
+            return []
+        path = plan_offline(frm, goal, a.content)
+        if not path:
+            emit(plan="none", frm=list(frm), note="map data shows no corridor")
+            return []
+        legs = thin(path, a.stride)
+        emit(plan="ok", tiles=len(path), legs=len(legs), frm=list(frm))
+        return legs
+
+    route = replan(here)
 
     for _ in range(a.legs):
         here, _ = walk.settled(a.character)
         gap = abs(here[0] - gx) + abs(here[1] - gz)
         if gap <= a.tol:
-            emit(trek="arrived", at=list(here), legs=legs_walked, detours=detours)
+            emit(
+                trek="arrived",
+                at=list(here),
+                legs=legs_walked,
+                detours=detours,
+                replans=replans,
+            )
             return 0
 
-        way = step_toward(here, goal, a.stride)
+        # Follow the plan where there is one; otherwise head straight at the goal.
+        if route:
+            way = route[0]
+        else:
+            way = step_toward(here, goal, a.stride)
+
         ok, hops, at = walk.leg(a.character, way, a.min_hp, a.food, calls=4, tol=a.tol)
         legs_walked += 1
         gap = abs(at[0] - gx) + abs(at[1] - gz)
-        emit(leg=list(way), ok=ok, at=list(at), gap=gap, hops=len(hops))
+        emit(
+            leg=list(way), ok=ok, at=list(at), gap=gap, hops=len(hops), left=len(route)
+        )
 
+        if ok and route:
+            route.pop(0)
+            best = min(best, gap)
+            continue
         if gap < best:
             best = gap
             continue
@@ -147,23 +258,35 @@ def main(argv):
         gap = abs(after[0] - gx) + abs(after[1] - gz)
         emit(detour_result=res.get("final") or res, at=list(after), gap=gap)
 
-        if gap >= best:
-            atlas.observe(
-                walk.state(a.character),
-                stood=list(after),
-                refused=list(way),
-                reason="trek stalled after detour",
-            )
+        if gap < best:
+            best = gap
+            if route:
+                route.pop(0)
+            continue
+
+        # Reality disagrees with the map here. maze.py has just written what it
+        # learned to blocked_tiles.json, so a fresh plan is a different plan --
+        # replanning without learning is the loop this deliberately avoids.
+        atlas.observe(
+            walk.state(a.character),
+            stood=list(after),
+            refused=list(way),
+            reason="trek leg and detour both failed",
+        )
+        replans += 1
+        if replans > a.replans:
             emit(
                 trek="stuck",
                 at=list(after),
                 gap=gap,
                 legs=legs_walked,
                 detours=detours,
-                note="fast leg and detour both failed to close the gap",
+                replans=replans,
+                note="leg, detour and replan all failed to close the gap",
             )
             return 1
-        best = gap
+        emit(replanning=replans, frm=list(after))
+        route = replan(after)
 
     final, _ = walk.settled(a.character)
     emit(
@@ -172,6 +295,7 @@ def main(argv):
         gap=abs(final[0] - gx) + abs(final[1] - gz),
         legs=legs_walked,
         detours=detours,
+        replans=replans,
     )
     return 1
 
