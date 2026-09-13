@@ -66,7 +66,9 @@ class RefusalIsNotAlwaysAWall(unittest.TestCase):
 
     def _observe(self, **kw):
         atlas.observe(
-            kw.pop("state", {"player": {"worldX": 3100, "worldZ": 3500}}), path=self.obs, **kw
+            kw.pop("state", {"player": {"worldX": 3100, "worldZ": 3500}}),
+            path=self.obs,
+            **kw,
         )
 
     def _fold(self):
