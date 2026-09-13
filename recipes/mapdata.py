@@ -117,14 +117,61 @@ def distinct_names(x_lo, x_hi, z_lo, z_hi, section="LOC", level=None, base=None)
     return Counter(r[3] for r in band(x_lo, x_hi, z_lo, z_hi, section, level, base))
 
 
-def blocked(
-    x_lo, x_hi, z_lo, z_hi, base=None, keywords=("lava", "railing", "wall", "fence")
-):
-    """Tiles carrying a loc that certainly blocks. NOT a walkability map."""
+# Names of things that stop a character. Matched as substrings, so "wall"
+# catches brickwall and drystonewall.
+#
+# This list is load-bearing and was badly incomplete. It held only lava,
+# railing, wall and fence, which misses `castlearrowslit` -- 364 of them in the
+# Falador-to-Ardougne corridor alone -- plus `hedge` (245), `castlecrumbly`,
+# `pileofbricks` and every ore rock. The failure is silent and specific: a
+# planner sees a doorway where a castle wall is, routes through it, and the
+# character is refused at a tile the map swears is open.
+#
+# Caught live: a scout planning west out of Falador was routed through the city
+# wall at (2935,3354-3356), where the loc is `castlecrumbly` and `pileofbricks_r`
+# rather than `castlewall`. Three tiles of missing keyword sealed a 321-tile
+# route the moment the live refusals were learned.
+#
+# Note this is wrong in BOTH directions and always has been: a wall loc sits on
+# a tile edge, so the tile itself is often still walkable. Checked against 847
+# tiles a live character actually stood on, the pre-existing "wall" keyword
+# alone accounts for 53 such false positives. Over-reporting is the safer of
+# the two errors -- it routes around a wall you could have hugged, rather than
+# through one you cannot pass -- but it is the reason this is a heuristic and
+# not a walkability map. "brick" was deliberately NOT added: bricks_1/bricks_2
+# are ground decoration, and brickwall is already caught by "wall".
+BLOCKING = (
+    "lava",
+    "railing",
+    "wall",
+    "fence",
+    "castle",
+    "hedge",
+    "crumbl",
+    "pileof",
+    "rubble",
+    "boulder",
+    "rock",
+)
+
+# Things a character goes *through*, which must never be recorded as blocking
+# even when they match the list above -- `inaccastledoubledoorropen` matches
+# "castle" and is a door. A requirement-gated passage is not a wall.
+PASSABLE = ("door", "gate", "stile", "ladder", "stair", "arch", "rocking")
+
+
+def blocked(x_lo, x_hi, z_lo, z_hi, base=None, keywords=BLOCKING, passable=PASSABLE):
+    """Tiles carrying a loc that certainly blocks. NOT a walkability map.
+
+    Still one-directional: it reports what is known to block, never that a tile
+    is walkable. Terrain -- water, lava ground, unmapped rock -- carries no loc
+    at all, so it cannot appear here. That is why `maze.py`'s learned set exists.
+    """
     return {
         (x, z)
         for x, z, rid, nm in band(x_lo, x_hi, z_lo, z_hi, "LOC", 0, base)
         if any(k in nm.lower() for k in keywords)
+        and not any(p in nm.lower() for p in passable)
     }
 
 
