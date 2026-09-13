@@ -103,6 +103,55 @@ def approach_tiles(loc, edges, blocked):
     return out
 
 
+OPENABLE = ("door", "gate")
+
+
+def try_open(character, state, here, want):
+    """Open a closed door or gate standing between two tiles. Returns True if
+    anything was opened.
+
+    `wall_edges()` deliberately excludes doors, because a door is a passage
+    rather than a wall. But **passable means openable, not open** -- a closed
+    door refuses the step exactly like a wall, with no message, and the planner
+    has already decided that edge is fine. This is the same mistake that made
+    two characters treat the Falador/Taverley boundary gate as the edge of the
+    world for a day; it took one Open call.
+
+    So a refused step asks whether something on either tile can simply be
+    opened, before the edge is written off as a wall.
+    """
+    opened = False
+    for loc in state.get("nearbyLocs") or []:
+        at = (loc.get("x"), loc.get("z"))
+        if at not in (here, want):
+            continue
+        name = (loc.get("name") or "").lower()
+        if not any(w in name for w in OPENABLE):
+            continue
+        for opt in loc.get("optionsWithIndex") or []:
+            if (opt.get("text") or "").lower() != "open":
+                continue
+            walk.cli(
+                character,
+                "act",
+                "interactLoc",
+                "--json",
+                json.dumps(
+                    {
+                        "locId": loc.get("id"),
+                        "x": at[0],
+                        "z": at[1],
+                        "optionIndex": opt.get("opIndex", 1),
+                    }
+                ),
+            )
+            walk.cli(character, "wait", "3")
+            emit(opened=loc.get("name"), id=loc.get("id"), at=list(at))
+            opened = True
+            break
+    return opened
+
+
 def walk_verified(character, path, learned, box, level):
     """Single steps, each one checked. Returns (arrived, where, refused_edge)."""
     here = path[0]
@@ -119,6 +168,20 @@ def walk_verified(character, path, learned, box, level):
         if at == want:
             here = at
             continue
+        # Before believing the edge is a wall, try opening whatever is on it.
+        if try_open(character, d, here, want):
+            walk.cli(
+                character,
+                "act",
+                "walkTo",
+                "--json",
+                json.dumps({"x": want[0], "z": want[1]}),
+            )
+            walk.cli(character, "wait", "2")
+            at, d = walk.settled(character)
+            if at == want:
+                here = at
+                continue
         # It did not land where the plan said. Record the edge and stop; the
         # caller replans from where the character actually is, which is the
         # whole difference between this and firing walkTo down a list.
@@ -139,7 +202,7 @@ def main(argv):
     ap.add_argument("--option", type=int, default=1)
     ap.add_argument("--content", default=None)
     ap.add_argument("--level", type=int, default=None, help="default: read it live")
-    ap.add_argument("--margin", type=int, default=40)
+    ap.add_argument("--margin", type=int, default=120)
     ap.add_argument("--replans", type=int, default=12)
     a = ap.parse_args(argv)
 
@@ -177,16 +240,39 @@ def main(argv):
                 return 1
             emit(approach_tiles=[list(g) for g in goals])
 
-        best = None
-        for g in goals:
-            if g == here:
-                best = [here]
-                break
-            p = plan(here, g, edges, blocked, box)
-            if p and (best is None or len(p) < len(best)):
-                best = p
+        def best_plan(edge_set):
+            out = None
+            for g in goals:
+                if g == here:
+                    return [here]
+                p = plan(here, g, edge_set, blocked, box)
+                if p and (out is None or len(p) < len(out)):
+                    out = p
+            return out
+
+        best = best_plan(edges)
+        if not best and learned:
+            # Learned edges are single live refusals, and a single refusal can
+            # be a passing NPC or a door that has since swung shut. Letting them
+            # accumulate into "there is no route" repeats the exact mistake
+            # `plan_offline` was fixed for: a wrong "no route" is
+            # indistinguishable from a closed world, so it reads as a fact about
+            # the building rather than a fact about the search.
+            best = best_plan(
+                mapdata.wall_edges(box[0], box[1], box[2], box[3], level, a.content)
+            )
+            if best:
+                emit(plan="relaxed", note="dropped learned edges; none of them held")
+                learned.clear()
         if not best:
-            emit(at=list(here), error="no indoor route", level=level, attempt=attempt)
+            emit(
+                at=list(here),
+                error="no indoor route",
+                level=level,
+                attempt=attempt,
+                margin=a.margin,
+                note="try a larger --margin before believing this",
+            )
             return 1
 
         emit(plan=len(best), at=list(here), to=list(best[-1]), level=level)
