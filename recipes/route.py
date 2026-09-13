@@ -137,7 +137,41 @@ def build_graph(routes: dict) -> dict:
                     # both sides. A one-way graph would refuse most return trips.
                     if v not in graph[u] or cost < graph[u][v]:
                         graph[u][v] = cost
+
+    add_crossings(routes, graph)
     return graph
+
+
+def add_crossings(routes: dict, graph: dict) -> int:
+    """Link the two sides of each recorded crossing, however far apart they are.
+
+    MAX_HOP exists to throw out phantom edges, and it is right to. But the real
+    crossings are genuinely long single moves: the Lumbridge/Varrock boundary is
+    one 27-tile walk from (3219,3333) to (3190,3363), and the Al Kharid toll
+    behaves like a teleport. Filtering those out removes the only edges joining
+    the southern world to Varrock, so a character can walk the crossing, record
+    the hop, arrive -- and the planner still answers `no_known_route`. Confirmed
+    live: that is exactly what happened.
+
+    A `crossings` entry is a deliberate statement that this move works, so it is
+    trusted regardless of span. The cost is the real distance, so a planner still
+    prefers ordinary walking when ordinary walking will do.
+    """
+    added = 0
+    for crossing in routes.get("crossings") or []:
+        if not isinstance(crossing, dict):
+            continue
+        here = as_point(crossing.get("from"))
+        there = as_point(crossing.get("beyond"))
+        if not here or not there:
+            continue
+        span = max(abs(here[0] - there[0]), abs(here[1] - there[1]))
+        cost = span * CONFIRMED_WEIGHT
+        for u, v in ((here, there), (there, here)):
+            if v not in graph[u] or cost < graph[u][v]:
+                graph[u][v] = cost
+                added += 1
+    return added
 
 
 def components(graph: dict) -> list:
