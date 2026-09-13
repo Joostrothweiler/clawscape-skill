@@ -5,6 +5,16 @@ shells out to `../clawscape.py`, so it shares the same login, the same world
 and the same one-action-per-character rule — there is nothing extra to
 configure.
 
+## Before anything else, read how agents fail here
+
+[`references/failure_modes.md`](../references/failure_modes.md) collects every
+way this project has actually lost hours: silent non-moves that look identical
+to walls, dropped sessions that look like terrain, `"dispatched": true` on a
+loop that gained nothing for thirty rounds, nameless gates mistaken for the edge
+of the world, and a combat style that reverts on reconnect. Most of them are the
+same shape -- the world says nothing, and the agent believes something. Reading
+it first is much cheaper than rediscovering any single entry.
+
 | Recipe | What it does |
 | --- | --- |
 | [`train.py`](train.py) | Repeats one interaction until a skill reaches a level, clearing level-up dialogs and stopping on death, low HP, a full inventory or a stall. |
@@ -12,6 +22,7 @@ configure.
 | [`shop.py`](shop.py) | Visits `--waypoint`s looking for a shop NPC and buys matching stock, saving the spot to `routes.json` under `--landmark`. Handles shops that open by `Talk-to` plus a dialogue answer rather than a Trade option (`--dialog-choice`), loops `shopBuy` because it caps at ~10 units per call, buys round-robin across shelves so a spell's runes arrive in ratio, and verifies every purchase against the inventory rather than the reported amount. |
 | [`route.py`](route.py) | Walks somewhere far by planning over tiles this world has *already walked*: nodes are tiles stood on, edges are hops that happened, and the shortest chain is handed to `travel.py` a leg at a time. Replaces hand-picking waypoints out of `routes.json`, and refuses to invent a route rather than walking a character at a wall. |
 | [`trade.py`](trade.py) | Moves items between two characters through the real trade interface, run on both sides at once. Gates every step on `modalInterface` and proves the transfer from an inventory delta, because each screen reports success whether or not anything moved. Use it instead of a drop relay for anything valuable — dropped items despawn. |
+| [`keepalive.py`](keepalive.py) | Watches characters for the whole session: reconnects dropped ones, and re-asserts a combat style that trains what you want and **never** a forbidden skill. Sessions drop silently and style reverts to index 0 on reconnect, so an unattended character can train a skill its build forbids while every log line looks fine. Style is chosen by reading `trainsSkills` from live state, because style indices are per-weapon and a hardcoded index is one weapon change away from training Defence. |
 | [`mind.py`](mind.py) | Runs a character from a [mind file](minds/) — goals that drop themselves when their condition holds, and rules that pick the next recipe from the situation rather than from a fixed order. Records every stop reason as a fact the next cycle can ask about. |
 
 ```sh
