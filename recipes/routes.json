@@ -137,27 +137,6 @@
         3190,
         3363
       ]
-    },
-    {
-      "name": "ship_gangplank",
-      "mechanism": "Cross",
-      "note": "Boarding and leaving any ship is a Gangplank loc whose ONLY option is Cross (opIndex 1), not Open. Confirmed live 2026-09-12 at Karamja (2956,3144 id 2082) and Port Sarim (3031,3217 id 2084). While aboard, player.level is 1; after crossing it is 0. A walker that only probes for Gate/Door/Stile reports 'stuck' on the dock tile with no idea a ship is under it.",
-      "examples": [
-        {
-          "pos": [
-            2956,
-            3144
-          ],
-          "locId": 2082
-        },
-        {
-          "pos": [
-            3031,
-            3217
-          ],
-          "locId": 2084
-        }
-      ]
     }
   ],
   "confirmed_paths": [
@@ -1328,6 +1307,409 @@
         }
       ],
       "timestamp": "2026-09-12T08:04:01Z"
+    },
+    {
+      "from": [
+        3055,
+        3395
+      ],
+      "to": [
+        3060,
+        3412
+      ],
+      "hops": [
+        [
+          3059,
+          3413
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:15:55Z"
+    },
+    {
+      "from": [
+        3059,
+        3413
+      ],
+      "to": [
+        3056,
+        3440
+      ],
+      "hops": [
+        [
+          3056,
+          3440
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:16:11Z"
+    },
+    {
+      "from": [
+        3056,
+        3440
+      ],
+      "to": [
+        3052,
+        3468
+      ],
+      "hops": [
+        [
+          3052,
+          3468
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:16:26Z"
+    },
+    {
+      "from": [
+        3052,
+        3468
+      ],
+      "to": [
+        3050,
+        3495
+      ],
+      "hops": [
+        [
+          3050,
+          3486
+        ],
+        [
+          3050,
+          3495
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:16:58Z"
+    },
+    {
+      "from": [
+        3050,
+        3495
+      ],
+      "to": [
+        3048,
+        3512
+      ],
+      "hops": [
+        [
+          3048,
+          3512
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:17:11Z"
+    },
+    {
+      "from": [
+        3048,
+        3512
+      ],
+      "to": [
+        3060,
+        3545
+      ],
+      "hops": [
+        [
+          3060,
+          3545
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:17:59Z"
+    },
+    {
+      "from": [
+        3060,
+        3545
+      ],
+      "to": [
+        3070,
+        3570
+      ],
+      "hops": [
+        [
+          3070,
+          3566
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:18:48Z"
+    },
+    {
+      "from": [
+        3070,
+        3566
+      ],
+      "to": [
+        3080,
+        3595
+      ],
+      "hops": [
+        [
+          3080,
+          3595
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:19:02Z"
+    },
+    {
+      "from": [
+        3080,
+        3595
+      ],
+      "to": [
+        3090,
+        3620
+      ],
+      "hops": [
+        [
+          3090,
+          3620
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:19:16Z"
+    },
+    {
+      "from": [
+        3090,
+        3620
+      ],
+      "to": [
+        3100,
+        3645
+      ],
+      "hops": [
+        [
+          3100,
+          3645
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:19:31Z"
+    },
+    {
+      "from": [
+        3100,
+        3645
+      ],
+      "to": [
+        3110,
+        3670
+      ],
+      "hops": [
+        [
+          3110,
+          3670
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:30:32Z"
+    },
+    {
+      "from": [
+        3110,
+        3670
+      ],
+      "to": [
+        3120,
+        3695
+      ],
+      "hops": [
+        [
+          3120,
+          3686
+        ],
+        [
+          3120,
+          3695
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:40:17Z"
+    },
+    {
+      "from": [
+        3120,
+        3695
+      ],
+      "to": [
+        3130,
+        3720
+      ],
+      "hops": [
+        [
+          3130,
+          3720
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:40:34Z"
+    },
+    {
+      "from": [
+        3130,
+        3720
+      ],
+      "to": [
+        3140,
+        3745
+      ],
+      "hops": [
+        [
+          3140,
+          3745
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:40:48Z"
+    },
+    {
+      "from": [
+        3140,
+        3745
+      ],
+      "to": [
+        3145,
+        3770
+      ],
+      "hops": [
+        [
+          3145,
+          3766
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:41:19Z"
+    },
+    {
+      "from": [
+        3145,
+        3766
+      ],
+      "to": [
+        3148,
+        3795
+      ],
+      "hops": [
+        [
+          3148,
+          3795
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:41:33Z"
+    },
+    {
+      "from": [
+        3148,
+        3795
+      ],
+      "to": [
+        3150,
+        3820
+      ],
+      "hops": [
+        [
+          3150,
+          3820
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:41:46Z"
+    },
+    {
+      "from": [
+        3150,
+        3820
+      ],
+      "to": [
+        3152,
+        3845
+      ],
+      "hops": [
+        [
+          3152,
+          3845
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:42:00Z"
+    },
+    {
+      "from": [
+        3152,
+        3845
+      ],
+      "to": [
+        3153,
+        3870
+      ],
+      "hops": [
+        [
+          3153,
+          3870
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:42:30Z"
+    },
+    {
+      "from": [
+        3153,
+        3870
+      ],
+      "to": [
+        3153,
+        3895
+      ],
+      "hops": [
+        [
+          3153,
+          3886
+        ],
+        [
+          3153,
+          3895
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:42:48Z"
+    },
+    {
+      "from": [
+        3153,
+        3895
+      ],
+      "to": [
+        3153,
+        3902
+      ],
+      "hops": [
+        [
+          3153,
+          3902
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:43:42Z"
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3153,
+        3902
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:48:44Z"
     }
   ],
   "open_problems": [
@@ -2184,6 +2566,221 @@
       ],
       "note": "NOT a dead end, it is the wrong approach line. Falador cannot be entered from the south at x=3037. The working line is x~3007-3015: repeated long-range walkTo at (3015,3354) went (3035,3282) -> (3013,3285) -> (3007,3327) -> (3014,3355) in 8 calls.",
       "resolved": true
+    },
+    {
+      "from": [
+        3060,
+        3545
+      ],
+      "to": [
+        3080,
+        3590
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:18:25Z",
+      "stuck_at": [
+        3060,
+        3545
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3895
+      ],
+      "to": [
+        3153,
+        3920
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:43:14Z",
+      "stuck_at": [
+        3153,
+        3895
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3154,
+        3910
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:44:09Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3160,
+        3906
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:44:48Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3145,
+        3906
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:45:15Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3168,
+        3910
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:45:43Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3138,
+        3908
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:46:10Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3902
+      ],
+      "to": [
+        3153,
+        3910
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-13T06:47:59Z",
+      "stuck_at": [
+        3153,
+        3902
+      ]
+    },
+    {
+      "from": [
+        3153,
+        3903
+      ],
+      "to": [
+        3153,
+        3910
+      ],
+      "hops": [
+        [
+          3161,
+          3903
+        ],
+        [
+          3168,
+          3903
+        ],
+        [
+          3168,
+          3895
+        ],
+        [
+          3169,
+          3900
+        ]
+      ],
+      "obstacles_crossed": [
+        {
+          "pos": [
+            3153,
+            3903
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3161,
+            3903
+          ]
+        },
+        {
+          "pos": [
+            3161,
+            3903
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3168,
+            3903
+          ]
+        },
+        {
+          "pos": [
+            3168,
+            3903
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3168,
+            3895
+          ]
+        },
+        {
+          "pos": [
+            3168,
+            3893
+          ],
+          "resolved_by": "sidestep",
+          "landed": [
+            3169,
+            3900
+          ]
+        }
+      ],
+      "timestamp": "2026-09-13T06:50:50Z",
+      "stuck_at": [
+        3168,
+        3893
+      ]
     }
   ]
 }
