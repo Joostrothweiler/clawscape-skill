@@ -182,7 +182,7 @@
           3410
         ]
       ],
-      "seen": 588
+      "seen": 602
     },
     "1016": {
       "alias": null,
@@ -226,7 +226,7 @@
           3512
         ]
       ],
-      "seen": 2209
+      "seen": 2263
     },
     "1017": {
       "alias": null,
@@ -270,7 +270,7 @@
           3287
         ]
       ],
-      "seen": 1156
+      "seen": 1350
     },
     "1018": {
       "alias": null,
@@ -314,7 +314,7 @@
           3382
         ]
       ],
-      "seen": 702
+      "seen": 936
     },
     "102": {
       "alias": null,
@@ -468,7 +468,7 @@
           3223
         ]
       ],
-      "seen": 1972
+      "seen": 2268
     },
     "1089": {
       "alias": null,
@@ -656,7 +656,7 @@
           3481
         ]
       ],
-      "seen": 2492
+      "seen": 2684
     },
     "1106": {
       "alias": null,
@@ -700,7 +700,7 @@
           3212
         ]
       ],
-      "seen": 378
+      "seen": 546
     },
     "1111": {
       "alias": null,
@@ -910,9 +910,21 @@
         [
           3274,
           3202
+        ],
+        [
+          2933,
+          3385
+        ],
+        [
+          2932,
+          3384
+        ],
+        [
+          2928,
+          3385
         ]
       ],
-      "seen": 5
+      "seen": 161
     },
     "1124": {
       "alias": null,
@@ -1100,7 +1112,7 @@
           3431
         ]
       ],
-      "seen": 716
+      "seen": 930
     },
     "1161": {
       "alias": null,
@@ -2368,7 +2380,7 @@
           3486
         ]
       ],
-      "seen": 5189
+      "seen": 6836
     },
     "1278": {
       "alias": null,
@@ -2414,7 +2426,7 @@
           3500
         ]
       ],
-      "seen": 4033
+      "seen": 4726
     },
     "1281": {
       "alias": null,
@@ -2460,7 +2472,7 @@
           3476
         ]
       ],
-      "seen": 1785
+      "seen": 2157
     },
     "1282": {
       "alias": null,
@@ -2906,7 +2918,7 @@
           3235
         ]
       ],
-      "seen": 188
+      "seen": 270
     },
     "1309": {
       "alias": null,
@@ -2979,6 +2991,28 @@
         ]
       ],
       "seen": 19
+    },
+    "1316": {
+      "alias": null,
+      "kind": null,
+      "names": [
+        "Evergreen"
+      ],
+      "note": null,
+      "options": [
+        "Chop down"
+      ],
+      "samples": [
+        [
+          2958,
+          3425
+        ],
+        [
+          2970,
+          3421
+        ]
+      ],
+      "seen": 37
     },
     "1317": {
       "alias": null,
@@ -3146,7 +3180,7 @@
           3552
         ]
       ],
-      "seen": 1430
+      "seen": 2114
     },
     "1379": {
       "alias": null,
@@ -3764,7 +3798,7 @@
           3425
         ]
       ],
-      "seen": 569
+      "seen": 713
     },
     "1533": {
       "alias": null,
@@ -4246,7 +4280,7 @@
           3422
         ]
       ],
-      "seen": 334
+      "seen": 682
     },
     "1612": {
       "alias": null,
@@ -4290,7 +4324,7 @@
           3393
         ]
       ],
-      "seen": 179
+      "seen": 325
     },
     "1722": {
       "alias": null,
@@ -4394,7 +4428,7 @@
           3384
         ]
       ],
-      "seen": 51
+      "seen": 63
     },
     "1747": {
       "alias": null,
@@ -4440,7 +4474,7 @@
           3410
         ]
       ],
-      "seen": 822
+      "seen": 940
     },
     "1750": {
       "alias": null,
@@ -4615,7 +4649,7 @@
           3435
         ]
       ],
-      "seen": 423
+      "seen": 1955
     },
     "187": {
       "alias": null,
@@ -6017,7 +6051,7 @@
           3397
         ]
       ],
-      "seen": 53
+      "seen": 247
     },
     "301": {
       "alias": null,
@@ -6077,7 +6111,7 @@
           3397
         ]
       ],
-      "seen": 65
+      "seen": 99
     },
     "307": {
       "alias": null,
@@ -6561,7 +6595,7 @@
           3390
         ]
       ],
-      "seen": 183
+      "seen": 307
     },
     "360": {
       "alias": null,
@@ -6625,7 +6659,7 @@
           3427
         ]
       ],
-      "seen": 149
+      "seen": 273
     },
     "362": {
       "alias": null,
@@ -7435,6 +7469,22 @@
       ],
       "seen": 50
     },
+    "440": {
+      "alias": null,
+      "kind": null,
+      "names": [
+        "Rock"
+      ],
+      "note": null,
+      "options": [],
+      "samples": [
+        [
+          2937,
+          3408
+        ]
+      ],
+      "seen": 163
+    },
     "441": {
       "alias": null,
       "kind": null,
@@ -7451,9 +7501,29 @@
         [
           3077,
           3232
+        ],
+        [
+          2940,
+          3406
+        ],
+        [
+          2936,
+          3410
+        ],
+        [
+          2934,
+          3409
+        ],
+        [
+          2931,
+          3416
+        ],
+        [
+          2932,
+          3418
         ]
       ],
-      "seen": 12
+      "seen": 673
     },
     "442": {
       "alias": null,
@@ -7517,7 +7587,7 @@
           3283
         ]
       ],
-      "seen": 961
+      "seen": 1041
     },
     "445": {
       "alias": null,
@@ -7561,7 +7631,7 @@
           3277
         ]
       ],
-      "seen": 737
+      "seen": 761
     },
     "446": {
       "alias": null,
@@ -7605,7 +7675,7 @@
           3727
         ]
       ],
-      "seen": 277
+      "seen": 600
     },
     "447": {
       "alias": null,
@@ -7649,7 +7719,7 @@
           3286
         ]
       ],
-      "seen": 1000
+      "seen": 1024
     },
     "452": {
       "alias": null,
@@ -7814,9 +7884,13 @@
         [
           3188,
           3469
+        ],
+        [
+          2967,
+          3416
         ]
       ],
-      "seen": 162
+      "seen": 164
     },
     "574": {
       "alias": null,
@@ -8068,7 +8142,7 @@
           3291
         ]
       ],
-      "seen": 1198
+      "seen": 1414
     },
     "596": {
       "alias": null,
@@ -8240,7 +8314,7 @@
           3405
         ]
       ],
-      "seen": 438
+      "seen": 572
     },
     "605": {
       "alias": null,
@@ -8842,9 +8916,17 @@
         [
           3150,
           3428
+        ],
+        [
+          2945,
+          3382
+        ],
+        [
+          2945,
+          3388
         ]
       ],
-      "seen": 23
+      "seen": 197
     },
     "692": {
       "alias": null,
@@ -9434,7 +9516,7 @@
           3387
         ]
       ],
-      "seen": 10
+      "seen": 118
     },
     "865": {
       "alias": null,
@@ -9450,7 +9532,7 @@
           3396
         ]
       ],
-      "seen": 15
+      "seen": 37
     },
     "873": {
       "alias": null,
@@ -9514,7 +9596,7 @@
           3486
         ]
       ],
-      "seen": 168
+      "seen": 236
     },
     "884": {
       "alias": null,
@@ -12097,7 +12179,7 @@
           3387
         ]
       ],
-      "seen": 10
+      "seen": 74
     },
     "npc:527": {
       "alias": null,
@@ -12124,9 +12206,25 @@
         [
           2959,
           3387
+        ],
+        [
+          2956,
+          3389
+        ],
+        [
+          2956,
+          3390
+        ],
+        [
+          2957,
+          3390
+        ],
+        [
+          2955,
+          3389
         ]
       ],
-      "seen": 10
+      "seen": 104
     },
     "npc:528": {
       "alias": null,
@@ -12597,9 +12695,21 @@
         [
           2951,
           3385
+        ],
+        [
+          2950,
+          3388
+        ],
+        [
+          2951,
+          3386
+        ],
+        [
+          2952,
+          3387
         ]
       ],
-      "seen": 10
+      "seen": 115
     },
     "npc:59": {
       "alias": null,
@@ -12646,6 +12756,43 @@
       ],
       "seen": 95
     },
+    "npc:598": {
+      "alias": null,
+      "kind": "npc",
+      "level": 0,
+      "names": [
+        "Hairdresser"
+      ],
+      "note": null,
+      "options": [],
+      "samples": [
+        [
+          2943,
+          3381
+        ],
+        [
+          2945,
+          3381
+        ],
+        [
+          2947,
+          3380
+        ],
+        [
+          2943,
+          3382
+        ],
+        [
+          2943,
+          3383
+        ],
+        [
+          2945,
+          3383
+        ]
+      ],
+      "seen": 14
+    },
     "npc:6": {
       "alias": null,
       "kind": "npc",
@@ -12689,7 +12836,7 @@
           3213
         ]
       ],
-      "seen": 45
+      "seen": 64
     },
     "npc:60": {
       "alias": null,
@@ -13049,7 +13196,7 @@
           3490
         ]
       ],
-      "seen": 156
+      "seen": 158
     },
     "npc:733": {
       "alias": null,
@@ -13650,7 +13797,7 @@
           3495
         ]
       ],
-      "seen": 641
+      "seen": 849
     },
     "npc:90": {
       "alias": null,
@@ -14177,20 +14324,325 @@
       "reason": null,
       "walk": 1
     },
+    "2934,3396": {
+      "block": 2,
+      "reason": "trek leg and detour both failed",
+      "walk": 0
+    },
     "2939,3155": {
       "block": 0,
       "reason": null,
       "walk": 2
+    },
+    "2939,3395": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2940,3395": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2940,3396": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2941,3395": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "2941,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 10
+    },
+    "2941,3397": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2941,3398": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2941,3399": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2941,3400": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2941,3401": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2942,3395": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2942,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 4
+    },
+    "2942,3397": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2942,3398": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2942,3399": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2942,3400": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2942,3401": {
+      "block": 0,
+      "reason": null,
+      "walk": 10
+    },
+    "2942,3402": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2943,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2943,3401": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2943,3402": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2943,3403": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2944,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2944,3402": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2944,3403": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2944,3404": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2944,3405": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2944,3406": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2944,3407": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2945,3403": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2945,3404": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2945,3405": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2945,3406": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2945,3407": {
+      "block": 0,
+      "reason": null,
+      "walk": 10
+    },
+    "2945,3408": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3409": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3410": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3411": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3412": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3413": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
+    },
+    "2945,3414": {
+      "block": 1,
+      "reason": "refused adjacent step",
+      "walk": 0
     },
     "2946,3148": {
       "block": 0,
       "reason": null,
       "walk": 1
     },
+    "2946,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2946,3407": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2946,3408": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2946,3409": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2946,3410": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2946,3411": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2946,3412": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2946,3413": {
+      "block": 0,
+      "reason": null,
+      "walk": 6
+    },
+    "2946,3414": {
+      "block": 0,
+      "reason": null,
+      "walk": 11
+    },
+    "2947,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2948,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2949,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2950,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2951,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2952,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2953,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2954,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
     "2955,3147": {
       "block": 0,
       "reason": null,
       "walk": 1
+    },
+    "2955,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
     },
     "2956,3143": {
       "block": 0,
@@ -14202,10 +14654,40 @@
       "reason": null,
       "walk": 1
     },
+    "2956,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2957,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2958,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2959,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
+    "2960,3396": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
+    },
     "2961,3396": {
       "block": 0,
       "reason": null,
-      "walk": 10
+      "walk": 16
+    },
+    "2963,3408": {
+      "block": 0,
+      "reason": null,
+      "walk": 2
     },
     "2982,3375": {
       "block": 0,
