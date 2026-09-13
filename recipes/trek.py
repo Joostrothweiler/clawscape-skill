@@ -119,8 +119,29 @@ def plan_offline(here, goal, content, margin=60):
         max(here[1], goal[1]) + margin,
     )
     blocked = mapdata.blocked(box[0], box[1], box[2], box[3], content)
-    blocked |= maze.load_learned(maze.DEFAULT_LEARNED)
-    return maze.plan(tuple(here), tuple(goal), blocked, box)
+    learned = maze.load_learned(maze.DEFAULT_LEARNED)
+
+    # Strictest first: honour everything a live character was refused.
+    plan = maze.plan(tuple(here), tuple(goal), blocked | learned, box)
+    if plan:
+        return plan
+
+    # Nothing got through. Rather than declaring the world closed, drop the
+    # learned tiles and plan on map data alone.
+    #
+    # The learned set believes a single refusal, permanently -- it keeps no
+    # counts and nothing ever clears it, unlike the atlas, which requires two
+    # refusals and forgets a tile the moment somebody stands on it. So one
+    # unlucky probe at a chokepoint seals a corridor for good. Measured: at
+    # (2936,3354) a 461-tile route to Ardougne existed on map data and shared
+    # exactly ONE tile with the learned set, yet the union returned no route.
+    #
+    # A plan that ignores a doubtful refusal is worth more than no plan,
+    # because walking it re-tests the tile and the walk is what learns.
+    plan = maze.plan(tuple(here), tuple(goal), blocked, box)
+    if plan:
+        emit(plan="relaxed", note="no route honouring learned blocks; map data only")
+    return plan
 
 
 def thin(path, stride):
