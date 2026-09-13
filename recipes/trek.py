@@ -84,7 +84,7 @@ def step_toward(here, goal, stride):
     return (hx + round(dx * stride / span), hz + round(dz * stride / span))
 
 
-def plan_offline(here, goal, content, margin=60):
+def plan_offline(here, goal, content, margin=200):
     """BFS the whole corridor over map data before taking a single step.
 
     Striding straight at a distant goal assumes the world between is open, and
@@ -112,6 +112,13 @@ def plan_offline(here, goal, content, margin=60):
     Returns a list of tiles, or None when the corridor is closed -- which is
     itself worth knowing before committing a character to the trip.
     """
+    # The box has to be generous. A margin of 60 was enough to answer "is there
+    # roughly a straight way there" and not enough for any route that detours
+    # widely -- it reported "no corridor" from (3094,3212) to Ardougne, a trip
+    # that exists, because the way around leaves the box. A corridor that is
+    # merely wide costs BFS almost nothing; a corridor that is too narrow costs
+    # a wrong answer, and a wrong "no route" is indistinguishable from a closed
+    # world.
     box = (
         min(here[0], goal[0]) - margin,
         max(here[0], goal[0]) + margin,
