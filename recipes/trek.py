@@ -84,6 +84,50 @@ def step_toward(here, goal, stride):
     return (hx + round(dx * stride / span), hz + round(dz * stride / span))
 
 
+ROUTES = os.path.join(HERE, "routes.json")
+
+
+def crossing_requirements(character):
+    """Warn about crossings the character cannot afford or is not equipped for.
+
+    routes.json records the Al Kharid border as a **toll costing 10 coins**, and
+    spells out what happens without them: the character completes the whole
+    dialog and is still refused, with no message saying why, which reads exactly
+    like a hard block. A scout was sent at that gate with an empty purse and
+    spent 21 detours and 21 replans failing to cross something that wanted a
+    coin it did not have.
+
+    The information was already written down. Nothing read it. So this reads it,
+    and says plainly what the character is short of -- a requirement is not a
+    wall, and a trek should never discover that the expensive way.
+    """
+    try:
+        routes = json.load(open(ROUTES))
+    except Exception:
+        return []
+    carried = {}
+    try:
+        d = walk.state(character)
+        for i in d.get("inventory") or []:
+            carried[i.get("name")] = carried.get(i.get("name"), 0) + i.get("count", 1)
+    except SystemExit:
+        return []
+    short = []
+    for c in routes.get("crossings") or []:
+        if not isinstance(c, dict):
+            continue
+        toll = c.get("toll_coins")
+        if toll and carried.get("Coins", 0) < toll:
+            short.append(
+                {
+                    "crossing": (c.get("note") or "")[:60],
+                    "needs_coins": toll,
+                    "has_coins": carried.get("Coins", 0),
+                }
+            )
+    return short
+
+
 def plan_offline(here, goal, content, margin=200):
     """BFS the whole corridor over map data before taking a single step.
 
@@ -235,6 +279,8 @@ def main(argv):
 
     here, _ = walk.settled(a.character)
     emit(trek="start", at=list(here), goal=list(goal), stride=a.stride)
+    for short in crossing_requirements(a.character):
+        emit(warn="cannot pay a recorded crossing", **short)
 
     best = abs(here[0] - gx) + abs(here[1] - gz)
     detours = 0
