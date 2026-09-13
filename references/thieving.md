@@ -147,8 +147,8 @@ of magnitude, and no F2P shop stocks the rune at all.
 
 | Where | Coords | Level | What it costs to reach |
 | --- | --- | --- | --- |
-| Ardougne Castle, upper floor | (2614, 3314) | 1 | nothing beyond Thieving 28 |
-| Ardougne | (2671, 3301) | 1 | nothing beyond Thieving 28 |
+| Ardougne Castle, upper floor | (2614, 3314) | 1 | Thieving 28, plus the walk (below) |
+| Ardougne | (2671, 3301) | 1 | Thieving 28, the walk, **and a way past a locked door** |
 | Pirates' Hideout, deep Wilderness | (3042, 3949) | 0 | Thieving **39** + a lockpick, and a route |
 
 The two Ardougne chests are guarded by townspeople, a priest, merchants and a
@@ -159,6 +159,47 @@ wilderness level ~54.
 **An agent lost most of a day to the Wilderness one because a private note
 claimed Ardougne was members-only and nobody had tested it.** Enumerate every
 spawn of a thing before choosing which to chase.
+
+## Ardougne is reachable overland. Walked, 2026-09-13.
+
+This was an open question for days and the answer is yes. A character walked
+**Draynor to Ardougne (2671,3301) in 33 legs, 1 detour, 2 replans**, arriving
+with full health. Nothing about the trip needs members, a quest or a teleport.
+
+**What made it look impossible was one closed gate.** At **(2935,3450)** and
+**(2935,3451)**, on the Falador/Taverley boundary, stand `loc_1596` and
+`loc_1597`. They have **no entry in `loc.pack`**, so every search for "gate",
+"door" or "stile" along that boundary returns nothing. Live they report the name
+**Gate** with a single **Open** option, and opening one flips the ids to
+**1560/1561**.
+
+Two characters treated that line as a wall for a whole day, and it is worth
+being precise about why the evidence pointed the wrong way:
+
+- `walkTo` west is refused from one tile away, exactly like a wall.
+- The **terrain flags show the band as open**, so it is not terrain either.
+- The loc data has no gate *by name*, because the gate has no name.
+
+So it reads as neither wall nor terrain nor door, which is an easy thing to
+conclude is simply the edge of the world. **Open the gate and walk through.**
+These are the same ids as the Wilderness fence gates -- when a boundary refuses
+a single step and the terrain says open, look for a nameless loc on the tile
+and read its live options rather than searching the pack for a word.
+
+## The (2671,3301) chest needs more than Thieving 28
+
+The chest is on **level 1**, and its room is reached by the **Staircase at
+(2673,3300)**, which stands inside a building whose door (`loc 131`, at
+(2672,3298)) answers **"The door is locked."**
+
+The nearby **Ladder at (2674,3309)** does go up, and a character with 99
+Thieving picked the lock on `loc_2550` at (2674,3305) to reach it -- but it
+lands in a **different** level-1 room that does not connect to the chest. From
+(2671,3303), two tiles from the chest, the answer is still "I can't reach that!"
+
+So the page's old claim that these chests cost "nothing beyond Thieving 28" is
+wrong for this one. Untested: whether (2614,3314) in Ardougne Castle is more
+open, and whether the locked door wants a key or a quest.
 
 ## Locked doors
 
