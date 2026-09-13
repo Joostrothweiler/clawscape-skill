@@ -284,3 +284,55 @@ identical tile, forever. The learned set is what converges, and it is kept
 between runs, so a region gets cheaper each time anyone crosses it. This is what
 finally crossed the Lava Maze after long-range walks, short hops and hand-rolled
 pathfinders had all failed.
+
+## [`atlas.py`](atlas.py) — knowing more each session than the last
+
+`routes.json` is a travel log: what journeys were made. The atlas is the map
+those journeys add up to, plus a dictionary of what things are. It exists so
+that nobody starts from scratch.
+
+    play  ->  observe()  ->  observations.jsonl  ->  fold  ->  atlas.json
+                  ^                                              |
+                  +---------------- brief / frontier ------------+
+
+**Observation is passive, which is the whole trick.** `walk.py` and `maze.py`
+call `atlas.observe()` on every settled state read, so simply moving records the
+tiles stood on and every loc and npc that came into view, with ids, options and
+coordinates. Nothing is learned on purpose, so nothing is forgotten by accident.
+
+    python3 recipes/atlas.py brief        # start here: what is known, where the gaps are
+    python3 recipes/atlas.py fold         # merge this session's observations in
+    python3 recipes/atlas.py frontier     # walkable tiles with unknown neighbours
+    python3 recipes/atlas.py unnamed      # objects seen live that still need an alias
+    python3 recipes/atlas.py describe 1597
+    python3 recipes/atlas.py name 1597 --alias wilderness_fence_gate_l --kind gate
+    python3 recipes/atlas.py crossing 2558 --verb Open --requires "Thieving 39 + lockpick"
+
+### Why the schema is shaped like this
+
+**A refusal is not a wall.** A tile can refuse because of terrain, because a
+gate wants opening, or because the character lacks a level or an item. Recording
+the Pirates' Hideout door as blocked would tell everyone it is impassable when it
+needs Thieving 39 and a lockpick. Requirement-gated passages are **crossings
+with a `requires`**, never blockers, and `blocked()` deliberately excludes them.
+
+**One failure is not evidence.** A monster standing on a tile refuses it once.
+Blocks are believed only after repeated independent refusals, and a tile someone
+later stands on clears its block outright — direct evidence always wins.
+
+**Objects are keyed by id, not name.** Many locs have no name: the Wilderness
+fence gates are `1596`/`1597` with no entry in `loc.pack`, which is why
+searching for "gate" found nothing and cost a day. `unnamed` lists what has been
+seen but not yet described, so the dictionary has a visible to-do list.
+
+**Crossing verbs are data.** Open, Cross, Slash, Push, Climb-over and the
+dialog-toll live in `crossings`, so a walker can enumerate the ways past a
+barrier instead of probing only for "Open" — which is how a walker once reported
+`stuck` on a dock with a gangplank underneath it.
+
+### The session ritual
+
+Start with `brief`. Plan with `route.py` over what is already known. Play — the
+observing happens by itself. End with `fold`, and commit the atlas along with
+`routes.json`. `frontier` then names the specific tiles where the map runs out,
+which turns "go explore" into a destination.

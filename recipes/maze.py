@@ -36,6 +36,7 @@ from collections import deque
 HERE = os.path.dirname(os.path.abspath(__file__))
 CLI_DIR = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
+import atlas  # noqa: E402
 import mapdata  # noqa: E402
 
 DEFAULT_LEARNED = os.path.join(HERE, "blocked_tiles.json")
@@ -68,10 +69,13 @@ def settled(character, tries=6):
         d = state(character)
         p = (d["player"]["worldX"], d["player"]["worldZ"])
         if p == last:
+            atlas.observe(d, stood=list(p))
             return p, d
         last = p
         cli(character, "wait", "3")
-    return last, state(character)
+    d = state(character)
+    atlas.observe(d, stood=list(last) if last else None)
+    return last, d
 
 
 def emit(**kw):
@@ -188,6 +192,12 @@ def main(argv):
             if after == before:
                 learned.add(wp)
                 save_learned(a.learned, learned)
+                atlas.observe(
+                    state(a.character),
+                    stood=list(after),
+                    refused=list(wp),
+                    reason="refused adjacent step",
+                )
                 emit(blocked=list(wp), at=list(after), learned=len(learned))
                 break
             if abs(after[0] - gx) + abs(after[1] - gz) <= 2:

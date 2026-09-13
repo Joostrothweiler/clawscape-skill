@@ -6,3 +6,6 @@ __pycache__/
 recipes/routes.json.lock
 recipes/memory.jsonl
 recipes/blocked_tiles.json
+recipes/observations.jsonl
+recipes/atlas.json.lock
+recipes/atlas.json.tmp
