@@ -180,8 +180,7 @@ def wall_edges(x_lo, x_hi, z_lo, z_hi, level=0, base=None, passable=None):
             continue
         if shape in IGNORED_SHAPES:
             continue
-        nm = idname.get(rid, "loc_%d" % rid).lower()
-        if any(p in nm for p in passable):
+        if is_passable(rid, idname.get(rid, "loc_%d" % rid), passable):
             continue
         rots = ()
         if shape == WALL_STRAIGHT:
@@ -208,8 +207,7 @@ def solid_tiles(x_lo, x_hi, z_lo, z_hi, level=0, base=None, passable=None):
             continue
         if not (x_lo <= x <= x_hi and z_lo <= z <= z_hi):
             continue
-        nm = idname.get(rid, "loc_%d" % rid).lower()
-        if any(p in nm for p in passable):
+        if is_passable(rid, idname.get(rid, "loc_%d" % rid), passable):
             continue
         out.add((x, z))
     return out
@@ -341,6 +339,23 @@ BLOCKING = (
 # even when they match the list above -- `inaccastledoubledoorropen` matches
 # "castle" and is a door. A requirement-gated passage is not a wall.
 PASSABLE = ("door", "gate", "stile", "ladder", "stair", "arch", "rocking")
+
+# Passages that are NAMELESS in loc.pack, so the name check above cannot see
+# them. This list is not a nicety: treating one of these as a wall is how two
+# characters decided the Falador/Taverley boundary was the edge of the world,
+# and how a planner later called the Ardougne Castle chest room "sealed" when
+# its door is `loc_2556`, a Thieving 13 lock.
+#
+# 2550-2559 are the locked doors from scripts/skill_thieving; 1596/1597 are the
+# fence gates. All of them open, some want a level or a lockpick -- and a
+# requirement-gated passage is never a wall.
+PASSABLE_IDS = frozenset({1596, 1597, 2550, 2551, 2554, 2555, 2556, 2557, 2558, 2559})
+
+
+def is_passable(rid, name, passable=PASSABLE):
+    """True if a loc is something a character goes through rather than around."""
+    low = (name or "").lower()
+    return rid in PASSABLE_IDS or any(p in low for p in passable)
 
 
 def blocked(x_lo, x_hi, z_lo, z_hi, base=None, keywords=BLOCKING, passable=PASSABLE):
