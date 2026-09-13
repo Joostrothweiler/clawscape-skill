@@ -209,6 +209,18 @@ def main(argv):
         help="stride straight at the goal instead of planning over map data",
     )
     ap.add_argument("--replans", type=int, default=6)
+    ap.add_argument(
+        "--drift",
+        type=int,
+        default=120,
+        help="abandon a plan once it leaves you this many tiles worse than best",
+    )
+    ap.add_argument(
+        "--plan-patience",
+        type=int,
+        default=10,
+        help="plan legs allowed without improving on best before abandoning",
+    )
     a = ap.parse_args(argv)
 
     gx, gz = (int(v) for v in a.to.split(","))
@@ -221,6 +233,7 @@ def main(argv):
     detours = 0
     legs_walked = 0
     replans = 0
+    stale = 0
     route = []
 
     def replan(frm):
@@ -265,10 +278,29 @@ def main(argv):
 
         if ok and route:
             route.pop(0)
-            best = min(best, gap)
+            if gap < best:
+                best, stale = gap, 0
+            else:
+                # A plan leg succeeded without getting closer. That is normal
+                # for a while -- the way out of Falador starts by heading east
+                # -- but it is also exactly how a bad plan burns a character.
+                stale += 1
+                if gap > best + a.drift or stale > a.plan_patience:
+                    emit(
+                        abandoning_plan=True,
+                        gap=gap,
+                        best=best,
+                        stale=stale,
+                        note="plan walked away from the goal without returning",
+                    )
+                    route = []
+                    replans += 1
+                    if replans <= a.replans:
+                        route = replan(at)
+                    continue
             continue
         if gap < best:
-            best = gap
+            best, stale = gap, 0
             continue
 
         # The fast path stopped closing. Spend the expensive method here only.
