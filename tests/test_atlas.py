@@ -66,49 +66,49 @@ class RefusalIsNotAlwaysAWall(unittest.TestCase):
 
     def _observe(self, **kw):
         atlas.observe(
-            kw.pop("state", {"player": {"worldX": 0, "worldZ": 0}}), path=self.obs, **kw
+            kw.pop("state", {"player": {"worldX": 3100, "worldZ": 3500}}), path=self.obs, **kw
         )
 
     def _fold(self):
         return atlas.fold(obs_path=self.obs, atlas_path=self.atlas)
 
     def test_one_refusal_is_not_believed(self):
-        self._observe(refused=[10, 10], reason="something stood there")
+        self._observe(refused=[3110, 3510], reason="something stood there")
         self._fold()
         a = atlas._load(self.atlas)
         self.assertNotIn(
-            "10,10",
+            "3110,3510",
             atlas.blocked(a),
             "a single refusal must not poison the map for everyone",
         )
 
     def test_repeated_refusals_are_believed(self):
         for _ in range(atlas.BLOCK_CONFIDENCE):
-            self._observe(refused=[11, 11], reason="terrain")
+            self._observe(refused=[3111, 3511], reason="terrain")
             self._fold()
         a = atlas._load(self.atlas)
-        self.assertIn("11,11", atlas.blocked(a))
+        self.assertIn("3111,3511", atlas.blocked(a))
 
     def test_standing_on_a_tile_clears_its_block(self):
         for _ in range(atlas.BLOCK_CONFIDENCE):
-            self._observe(refused=[12, 12], reason="terrain")
+            self._observe(refused=[3112, 3512], reason="terrain")
             self._fold()
-        self.assertIn("12,12", atlas.blocked(atlas._load(self.atlas)))
-        self._observe(stood=[12, 12])
+        self.assertIn("3112,3512", atlas.blocked(atlas._load(self.atlas)))
+        self._observe(stood=[3112, 3512])
         self._fold()
         self.assertNotIn(
-            "12,12",
+            "3112,3512",
             atlas.blocked(atlas._load(self.atlas)),
             "direct evidence must always beat an inferred block",
         )
 
     def test_walked_tile_never_becomes_blocked(self):
-        self._observe(stood=[13, 13])
+        self._observe(stood=[3113, 3513])
         self._fold()
         for _ in range(5):
-            self._observe(refused=[13, 13], reason="monster in the way")
+            self._observe(refused=[3113, 3513], reason="monster in the way")
             self._fold()
-        self.assertNotIn("13,13", atlas.blocked(atlas._load(self.atlas)))
+        self.assertNotIn("3113,3513", atlas.blocked(atlas._load(self.atlas)))
 
 
 class RequirementGatedPassagesAreNotWalls(unittest.TestCase):
@@ -177,3 +177,37 @@ class TheAtlasStaysReadable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BadReadsStayOutOfTheMap(unittest.TestCase):
+    """Tile "1,1" once reached the shared atlas as confirmed walkable ground.
+
+    A planner cannot tell a phantom tile from a real one, so a single malformed
+    state read becomes a permanent wrong entry in every agent's map.
+    """
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.atlas = os.path.join(self.dir, "atlas.json")
+        self.obs = os.path.join(self.dir, "obs.jsonl")
+
+    def test_out_of_world_tile_is_not_recorded(self):
+        atlas.observe(
+            {"player": {"worldX": 1, "worldZ": 1}}, stood=[1, 1], path=self.obs
+        )
+        atlas.fold(obs_path=self.obs, atlas_path=self.atlas)
+        self.assertNotIn("1,1", atlas._load(self.atlas).get("tiles", {}))
+
+    def test_high_z_regions_are_real_and_kept(self):
+        """z runs to 10367 here. Treating high z as junk would delete real map."""
+        self.assertTrue(atlas.in_world([3243, 9893]))
+        self.assertTrue(atlas.in_world([3093, 3518]))
+
+    def test_obvious_nonsense_is_rejected(self):
+        for bad in ([1, 1], [0, 0], [-5, 3000], [99999, 3000], None, ["a", "b"]):
+            self.assertFalse(atlas.in_world(bad) if bad else False)
+
+    def test_shipped_atlas_has_no_out_of_world_tiles(self):
+        a = atlas._load(os.path.join(RECIPES, "atlas.json"))
+        bad = [t for t in a.get("tiles", {}) if not atlas.in_world(t.split(","))]
+        self.assertEqual(bad, [], "the shared atlas must contain only real tiles")
