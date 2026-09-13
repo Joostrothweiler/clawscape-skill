@@ -49,7 +49,7 @@ multiplier entirely. **Always state which column a number came from.**
 Practically: a level goal costs 2.5x less xp than the config table suggests, so
 compute grind estimates from the live column.
 
-## Guards are not the best target, only the best one near Falador
+## Guards are not the best target, only the best one near Edgeville
 
 This matters more than anything else on this page. Everything above Guard in
 the table was missing from it, so an agent reading it would grind guards to 99
@@ -65,9 +65,9 @@ Gnome Stronghold:
 | Paladin (id 20, 22 spawns) | (2653,3315) (2657,3307) | Ardougne |
 | Knight of Ardougne (id 23, 5 spawns) | (2671,3313) (2652,3318) | Ardougne |
 | Gnome (id 66, 44 spawns) | (2478,3502) (2482,3498) | Gnome Stronghold |
-| Guard (id 9, 43 spawns) | (3093,3518) (3085,3518) (3109,3513) | **Falador, ~620 tiles closer** |
+| Guard (id 9, 43 spawns) | (3093,3518) (3085,3518) (3109,3513) | **Edgeville, ~620 tiles closer** |
 
-So the decision is a travel cost, not an xp comparison. Falador guards were
+So the decision is a travel cost, not an xp comparison. The Edgeville guards were
 measured live at roughly **800 xp per train.py round at ~7 ticks a round**, which
 carries a character from 88 to 99 in well under an hour. A 620-tile trek through
 unmapped ground to reach Heroes does not pay for itself over that distance --
@@ -94,18 +94,25 @@ the gate on the best chests (below).
 the Wilderness**: two at (3076, 3916) and (3079, 3909), the rest at Rogues'
 Castle (3276-3287, 3927-3939). So a lockpick costs a Wilderness trip.
 
-## Grinding guards at Falador, and the trap in the bank run
+## Grinding guards at Edgeville, and the trap in the bank run
 
 The guards stand at **(3093,3518), (3085,3518), (3109,3513), (3110,3515),
-(3114,3512), (3114,3517)**, just inside Falador's north end. The bank booth is
-**(3095,3489,2213)**, about 28 tiles south. That is a short, self-funding loop:
-pickpocket, bank the coins, restock lobsters, walk back.
+(3114,3512), (3114,3517)**, at **Edgeville** -- not Falador, which is 240 tiles
+south-west at (3015,3354). The bank booth is **(3095,3489, loc 2213)**, about 28
+tiles south of the guards, and `routes.json` records the spot as
+`edgeville_bank` (3096,3492). That is a short, self-funding loop: pickpocket,
+bank the coins, restock lobsters, walk back.
 
-**The trap:** the straight line between them runs through the bank building's
-`brickwall`. A waypoint walk from the booth north along x3094 is refused at
-about z3506, and the only openings nearby are `openbankdoor_l` (3101,3509) and
-`openthickpoordoor` (3101,3510) -- east of that line. `maze.py` routes around it
-correctly; a straight `walk.py` waypoint chain does not.
+**Check the landmark before naming a town.** These guards were written up as
+Falador's for most of a session. Every coordinate was right and the name was
+wrong, which is the kind of error that survives review and sends the next agent
+240 tiles to the wrong place. `routes.json` landmarks answer it in one lookup.
+
+**The trap:** the straight line between booth and guards runs through the bank
+building's `brickwall`. A waypoint walk from the booth north along x3094 is
+refused at about z3506, and the only openings nearby are `openbankdoor_l`
+(3101,3509) and `openthickpoordoor` (3101,3510) -- east of that line. `maze.py`
+routes around it correctly; a straight `walk.py` waypoint chain does not.
 
 **Why that is worth a section:** a loop that walked the straight line left a
 character standing at (3094,3500) and then ran `train.py` against a Guard that
@@ -190,6 +197,19 @@ run north, **slash the web** (`bigweb_slashable`, locs at (3093, 3957) and
 (3095, 3957) — any slash weapon does it), then run west to the compound doors.
 The lever script carries no level or membership check, only a confirmation
 dialog ("Yes I'm brave.").
+
+**Five green dragons sit across the overland approach**, at (3078,3810),
+(3092,3810), (3098,3821), (3107,3812) and (3118,3820) -- a band at z3810-3821
+spanning x3078-3118. An agent died there. They are **npc id 941**, which is the
+detail that matters: the dragon ids are not contiguous, red is 53, black 54 and
+blue 55, so a preflight that checks an id *range* misses green entirely. Check
+by name.
+
+The Rogues that drop the lockpick are north of that band at (3076,3916) and
+(3079,3909), so an overland trip to them crosses it. Note also that map data
+alone reports **no route** from Edgeville (3093,3518) north to the Rogues: the
+Wilderness wall and the Lava Maze close it, which is why the recorded route
+goes east to the gate at (3224,3904) rather than straight north.
 
 Note that both the lever and the two easy chests are in Ardougne, so Ardougne
 access is the single gate on every nature rune plan.
