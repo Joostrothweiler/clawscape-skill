@@ -220,7 +220,11 @@ def try_open_blocker(character, state, here, want):
     opened = False
     for loc in state.get("nearbyLocs") or []:
         at_t = (loc.get("x"), loc.get("z"))
-        if at_t not in (tuple(here), tuple(want)):
+        # A gate is not on your tile; it is on the tile BETWEEN you and where
+        # you are going. Matching only `here` and `want` misses every gate
+        # there is: a scout stood one tile east of an open-able gate for 97
+        # legs while the gate sat in its own nearbyLocs the whole time.
+        if max(abs(at_t[0] - here[0]), abs(at_t[1] - here[1])) > 1:
             continue
         name = (loc.get("name") or "").lower()
         if not (
