@@ -18,6 +18,10 @@ sys.path.insert(
 
 import keepalive  # noqa: E402
 
+RECIPES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "recipes"
+)
+
 # Arete's live scimitar table, copied from a real state read.
 SCIMITAR = {
     "currentStyle": 0,
@@ -80,3 +84,34 @@ class NeverTrainsAForbiddenSkill(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HuntRefusesToFightHurt(unittest.TestCase):
+    """A character that starts a fight below its heal threshold dies first.
+
+    Measured: sent into level-42 moss giants at 52/94 with Defence 1, dead
+    before the loop's first iteration -- the opening log line read hp 0, and it
+    then swung at an empty field for 44 rounds because nothing checked whether
+    the character was still where it started.
+    """
+
+    def setUp(self):
+        import hunt
+
+        self.hunt = hunt
+
+    def test_reads_option_index_from_the_npc(self):
+        """Option indices are per-NPC, the same trap as combat style indices."""
+        npc = {"optionsWithIndex": [{"text": "Attack", "opIndex": 3}]}
+        self.assertEqual(self.hunt.option_index(npc, "Attack"), 3)
+
+    def test_unknown_option_falls_back_safely(self):
+        self.assertEqual(self.hunt.option_index({}, "Attack"), 1)
+
+    def test_source_guards_health_before_engaging(self):
+        src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
+        self.assertIn("too hurt to start", src)
+
+    def test_source_detects_death_by_position(self):
+        src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
+        self.assertIn("died and respawned", src)

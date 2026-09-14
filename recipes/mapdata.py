@@ -273,6 +273,86 @@ def _square_flags(mx, mz, base=None):
     return out
 
 
+_OVERLAY_CACHE = {}
+
+
+def _square_overlays(mx, mz, base=None):
+    """(x,z) -> overlay id for level 0 of one map square, cached.
+
+    MAP rows carry an `o` field as well as `h`, `f` and `u`, in the form
+    `o<id>[;shape[;rotation]]`. Nothing here read it until 2026-09-13, which
+    left a whole class of terrain invisible: a character stood on a riverbank
+    with every eastward step refused and the flags said nothing, because the
+    river is an overlay.
+    """
+    key = (mx, mz, base or DEFAULT_CONTENT)
+    if key in _OVERLAY_CACHE:
+        return _OVERLAY_CACHE[key]
+    path = os.path.join(_content(base), "maps", "m%d_%d.jm2" % (mx, mz))
+    out = {}
+    if os.path.exists(path):
+        with io.open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if line.startswith("===="):
+                    if "LOC" in line:
+                        break
+                    continue
+                head, sep, rest = line.partition(":")
+                if not sep:
+                    continue
+                parts = head.split()
+                if len(parts) != 3:
+                    continue
+                try:
+                    lvl, lx, lz = (int(v) for v in parts)
+                except ValueError:
+                    continue
+                if lvl != 0:
+                    continue
+                for tok in rest.split():
+                    if tok.startswith("o"):
+                        oid = tok[1:].split(";")[0]
+                        if oid.isdigit():
+                            out[(mx * 64 + lx, mz * 64 + lz)] = int(oid)
+                        break
+    _OVERLAY_CACHE[key] = out
+    return out
+
+
+# Measured against 1033 tiles a character stood on and 480 it was refused:
+#
+#   overlay 19 : 0 walked, 57 refused   -- water, never passable
+#   overlay  6 : 12 walked, 113 refused -- water edge, effectively impassable
+#   overlay 10 : 158 walked, 5 refused  -- ROAD, the most-walked surface here
+#   overlay  5 : 29 walked, 2 refused   -- walkable
+BLOCKING_OVERLAYS = frozenset({6, 19})
+ROAD_OVERLAY = 10
+
+
+def overlay_map(x_lo, x_hi, z_lo, z_hi, base=None):
+    out = {}
+    for mx in range(x_lo // 64, x_hi // 64 + 1):
+        for mz in range(z_lo // 64, z_hi // 64 + 1):
+            for (x, z), o in _square_overlays(mx, mz, base).items():
+                if x_lo <= x <= x_hi and z_lo <= z <= z_hi:
+                    out[(x, z)] = o
+    return out
+
+
+def roads(x_lo, x_hi, z_lo, z_hi, base=None):
+    """Tiles carrying the road overlay.
+
+    The road network runs unbroken from x2560 to x3263 -- Ardougne past Varrock.
+    A planner that prefers it walks ground the world was built to be walked on,
+    instead of discovering riverbanks one refusal at a time.
+    """
+    return {
+        t
+        for t, o in overlay_map(x_lo, x_hi, z_lo, z_hi, base).items()
+        if o == ROAD_OVERLAY
+    }
+
+
 BLOCKED_BIT = 1
 
 
@@ -295,6 +375,10 @@ def terrain_blocked(x_lo, x_hi, z_lo, z_hi, base=None):
             for (x, z), fl in _square_flags(mx, mz, base).items():
                 if fl & BLOCKED_BIT and x_lo <= x <= x_hi and z_lo <= z <= z_hi:
                     out.add((x, z))
+    # Water is an overlay, not a flag. Without this a plan crosses rivers.
+    for t, o in overlay_map(x_lo, x_hi, z_lo, z_hi, base).items():
+        if o in BLOCKING_OVERLAYS:
+            out.add(t)
     return out
 
 
