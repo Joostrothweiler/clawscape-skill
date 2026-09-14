@@ -201,6 +201,73 @@ def detour(character, goal, content, budget, min_hp):
     return last
 
 
+OPENABLE_NAMES = ("door", "gate", "stile")
+
+
+def try_open_blocker(character, state, here, want):
+    """Open a gate or door standing between two tiles, and say so.
+
+    `indoor.py` learned this and `trek.py` never did, which is why a scout sat
+    at (2936,3450) for 97 legs, 32 detours and 51 replans reporting terrain it
+    could not pass. It was standing **on the road**, at the Falador/Taverley
+    boundary gate -- `loc_1596`/`loc_1597`, nameless in loc.pack, the same gate
+    that cost a day the first time somebody met it.
+
+    A closed gate refuses a step exactly like a wall and says nothing, so a
+    walker that cannot open one will grind against it forever. Matched by id as
+    well as by name, because the gates that matter carry no name.
+    """
+    opened = False
+    for loc in state.get("nearbyLocs") or []:
+        at_t = (loc.get("x"), loc.get("z"))
+        if at_t not in (tuple(here), tuple(want)):
+            continue
+        name = (loc.get("name") or "").lower()
+        if not (
+            any(w in name for w in OPENABLE_NAMES)
+            or loc.get("id") in mapdata.PASSABLE_IDS
+        ):
+            continue
+        options = {
+            (o.get("text") or "").lower(): o.get("opIndex", 1)
+            for o in loc.get("optionsWithIndex") or []
+        }
+        for verb in ("open", "pick lock"):
+            if verb not in options:
+                continue
+            for _ in range(6 if verb == "pick lock" else 1):
+                walk.cli(
+                    character,
+                    "act",
+                    "interactLoc",
+                    "--json",
+                    json.dumps(
+                        {
+                            "locId": loc.get("id"),
+                            "x": at_t[0],
+                            "z": at_t[1],
+                            "optionIndex": options[verb],
+                        }
+                    ),
+                )
+                walk.cli(character, "wait", "3")
+                now, d2 = walk.settled(character)
+                said = " ".join(
+                    (m.get("text") or "") for m in (d2.get("gameMessages") or [])[-2:]
+                ).lower()
+                if (
+                    "manage to pick" in said
+                    or "go through" in said
+                    or now != tuple(here)
+                ):
+                    emit(opened_blocker=loc.get("name") or loc.get("id"), verb=verb)
+                    return True
+                if "locked" in said and verb == "open":
+                    break
+            opened = True
+    return opened
+
+
 def nearest_road(at, content, radius=25):
     """The closest road tile, or None. Roads are the world's own walkways."""
     try:
@@ -406,6 +473,13 @@ def main(argv):
         if gap < best:
             best, stale = gap, 0
             continue
+
+        # A closed gate refuses exactly like a wall. Ask before digging.
+        try:
+            if try_open_blocker(a.character, walk.state(a.character), at, way):
+                continue
+        except Exception:
+            pass
 
         # The fast path stopped closing. Spend the expensive method here only.
         detours += 1

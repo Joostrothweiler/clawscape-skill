@@ -115,3 +115,26 @@ class HuntRefusesToFightHurt(unittest.TestCase):
     def test_source_detects_death_by_position(self):
         src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
         self.assertIn("died and respawned", src)
+
+
+class TrekMustOpenGates(unittest.TestCase):
+    """A closed gate refuses a step exactly like a wall, and says nothing.
+
+    A scout sat at (2936,3450) for 97 legs, 32 detours and 51 replans reporting
+    impassable terrain. It was standing ON the road at the Falador/Taverley
+    boundary gate -- loc_1596/loc_1597, nameless in loc.pack, the same gate that
+    cost a day the first time anyone met it. indoor.py could open gates;
+    trek.py could not.
+    """
+
+    def test_trek_tries_to_open_blockers(self):
+        src = open(os.path.join(RECIPES_DIR, "trek.py")).read()
+        self.assertIn("try_open_blocker", src)
+
+    def test_trek_matches_nameless_gate_ids(self):
+        src = open(os.path.join(RECIPES_DIR, "trek.py")).read()
+        self.assertIn("PASSABLE_IDS", src)
+
+    def test_trek_accepts_pick_lock_not_just_open(self):
+        src = open(os.path.join(RECIPES_DIR, "trek.py")).read()
+        self.assertIn("pick lock", src)
