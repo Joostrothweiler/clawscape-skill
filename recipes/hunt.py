@@ -37,6 +37,7 @@ import walk  # noqa: E402
 
 # Anything worth taking by default: alchable metal, runes, and money.
 DEFAULT_TAKE = (
+    "bones",
     "rune",
     "coins",
     "shield",
@@ -94,6 +95,37 @@ def wanted(name, takes):
     return any(t.lower() in low for t in takes)
 
 
+def bury_bones(character, d):
+    """Bury any bones carried. Trains Prayer from loot that is otherwise junk.
+
+    Bones are the one drop worth taking that is not worth alching or selling:
+    they occupy a slot, they are dropped by everything, and burying them is
+    free Prayer xp. A hunt that leaves them on the ground throws away a skill.
+    """
+    buried = 0
+    for item in list(d.get("inventory") or []):
+        name = (item.get("name") or "").lower()
+        if "bones" not in name:
+            continue
+        opts = {
+            (o.get("text") or "").lower(): o.get("opIndex", 1)
+            for o in item.get("optionsWithIndex") or []
+        }
+        idx = opts.get("bury")
+        if idx is None:
+            continue
+        walk.cli(
+            character,
+            "act",
+            "useInventoryItem",
+            "--json",
+            json.dumps({"slot": item.get("slot"), "optionIndex": idx}),
+        )
+        walk.cli(character, "wait", "2")
+        buried += 1
+    return buried
+
+
 def eat(character, d, min_hp, food):
     p = d.get("player") or {}
     if p.get("hp", 99) >= min_hp:
@@ -124,6 +156,18 @@ def sweep(character, takes, limit=6):
         name = item.get("name")
         if not wanted(name, takes):
             continue
+        # Walk to it first. Drops land at the TARGET's feet, not yours, and
+        # `pickupItem` on something out of reach just answers "I can't reach
+        # that!". Arrows especially: every shot is an arrow on the ground by
+        # the corpse, and a ranged hunt that does not collect them runs out.
+        walk.cli(
+            character,
+            "act",
+            "walkTo",
+            "--json",
+            json.dumps({"x": item.get("x"), "z": item.get("z"), "running": True}),
+        )
+        walk.cli(character, "wait", "3")
         walk.cli(
             character,
             "act",
@@ -152,9 +196,31 @@ def main(argv):
     ap.add_argument("--min-hp", type=int, default=45)
     ap.add_argument("--food", default="Lobster")
     ap.add_argument("--report-every", type=int, default=10)
+    ap.add_argument(
+        "--safespot",
+        default=None,
+        help="x,z to return to after every attack; the tile the target cannot reach",
+    )
+    ap.add_argument(
+        "--target",
+        default=None,
+        help="x,z of the ONE spawn to attack; required for safespotting",
+    )
+    ap.add_argument(
+        "--kite",
+        type=int,
+        default=0,
+        help="tiles to back away from the target after each attack",
+    )
     a = ap.parse_args(argv)
 
     takes = a.take or list(DEFAULT_TAKE)
+    pin = None
+    if a.target:
+        pin = tuple(int(v) for v in a.target.split(","))
+    safespot = None
+    if a.safespot:
+        safespot = tuple(int(v) for v in a.safespot.split(","))
     d = state(a.character)
     if not d:
         raise SystemExit(json.dumps({"error": "no state"}))
@@ -162,6 +228,7 @@ def main(argv):
     t0 = time.time()
     kills = 0
     taken = 0
+    buried = 0
 
     p = d.get("player") or {}
     hp, maxhp = p.get("hp", 0), p.get("maxHp", 0) or 1
@@ -221,10 +288,20 @@ def main(argv):
 
         target = None
         for n in d.get("nearbyNpcs") or []:
-            if (a.npc or "").lower() in (n.get("name") or "").lower():
-                if (n.get("hp") is None) or n.get("hp", 1) > 0:
-                    target = n
-                    break
+            if (a.npc or "").lower() not in (n.get("name") or "").lower():
+                continue
+            if (n.get("hp") is not None) and n.get("hp", 1) <= 0:
+                continue
+            # A safespot works against ONE spawn, not against the species. The
+            # first safespot test failed for exactly this reason: the loop
+            # attacked the nearest giant, seven tiles off at the edge of bow
+            # range, so the character walked in to close -- and the tile chosen
+            # to be unreachable by a different giant became irrelevant.
+            if pin is not None:
+                if (n.get("x"), n.get("z")) != pin:
+                    continue
+            target = n
+            break
         if target is None:
             taken += sweep(a.character, takes)
             emit(round=r, note="no target in range", taken=taken)
@@ -244,8 +321,29 @@ def main(argv):
             ),
         )
         walk.cli(a.character, "wait", "8")
+
+        # Attacking WALKS YOU TO THE TARGET. That is what breaks a safespot:
+        # the tile was chosen because the monster cannot reach it, and the
+        # attack command promptly carries you off it into melee range. Measured
+        # at (2544,3413): ten attacks, character ended at (2544,3408), 18
+        # damage taken, safespot entirely defeated by its own attack.
+        #
+        # So step back after every attack. Ranged hits from the safespot, the
+        # monster swings at empty air.
+        if safespot:
+            at_now, _ = walk.settled(a.character)
+            if tuple(at_now) != safespot:
+                walk.cli(
+                    a.character,
+                    "act",
+                    "walkTo",
+                    "--json",
+                    json.dumps({"x": safespot[0], "z": safespot[1], "running": True}),
+                )
+                walk.cli(a.character, "wait", "4")
         kills += 1
         taken += sweep(a.character, takes)
+        buried += bury_bones(a.character, state(a.character) or {})
         atlas.observe(state(a.character))
 
         if r % a.report_every == 0:
@@ -260,6 +358,7 @@ def main(argv):
                 round=r,
                 engaged=kills,
                 picked_up=taken,
+                bones_buried=buried,
                 hp=(d.get("player") or {}).get("hp"),
                 food=now.get(a.food, 0),
                 free_slots=28 - len(d.get("inventory") or []),
@@ -273,6 +372,7 @@ def main(argv):
         hunt="done",
         engaged=kills,
         picked_up=taken,
+        bones_buried=buried,
         minutes=round((time.time() - t0) / 60, 1),
         gained={
             k: now.get(k, 0) - start.get(k, 0)
