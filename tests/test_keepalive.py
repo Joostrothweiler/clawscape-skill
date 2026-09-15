@@ -138,3 +138,28 @@ class TrekMustOpenGates(unittest.TestCase):
     def test_trek_accepts_pick_lock_not_just_open(self):
         src = open(os.path.join(RECIPES_DIR, "trek.py")).read()
         self.assertIn("pick lock", src)
+
+
+class SupervisorKeepsWorkRunning(unittest.TestCase):
+    """keepalive keeps a character connected; nothing kept it busy.
+
+    Those failures look identical from outside -- a character standing still,
+    online, healthy, achieving nothing -- and on 2026-09-14 three characters sat
+    idle at once until Mike said "it seems like you're stuck".
+    """
+
+    def setUp(self):
+        import supervisor
+
+        self.sup = supervisor
+
+    def test_detects_a_running_job(self):
+        self.assertEqual(self.sup.running_for("definitely-not-a-character"), [])
+
+    def test_source_enforces_one_actor_per_character(self):
+        src = open(os.path.join(RECIPES_DIR, "supervisor.py")).read()
+        self.assertIn("kill_for", src)
+
+    def test_source_restarts_from_the_assignment(self):
+        src = open(os.path.join(RECIPES_DIR, "supervisor.py")).read()
+        self.assertIn("no job running, restarting assignment", src)
