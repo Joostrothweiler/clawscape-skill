@@ -163,3 +163,20 @@ class SupervisorKeepsWorkRunning(unittest.TestCase):
     def test_source_restarts_from_the_assignment(self):
         src = open(os.path.join(RECIPES_DIR, "supervisor.py")).read()
         self.assertIn("no job running, restarting assignment", src)
+
+
+class SupervisorDetectsStalls(unittest.TestCase):
+    """A live process is not progress.
+
+    Two scouts replanned forever from one tile while the supervisor reported
+    them healthy -- the job was up, the log ticked, the character did not move.
+    A trek walking a plan that leads away from the goal looks identical.
+    """
+
+    def test_checks_position_not_just_process(self):
+        src = open(os.path.join(RECIPES_DIR, "supervisor.py")).read()
+        self.assertIn("def position(", src)
+
+    def test_restarts_a_stalled_job(self):
+        src = open(os.path.join(RECIPES_DIR, "supervisor.py")).read()
+        self.assertIn("alive but not moving, restarting", src)

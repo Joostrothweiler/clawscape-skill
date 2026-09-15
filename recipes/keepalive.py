@@ -47,13 +47,25 @@ CLI_DIR = os.path.dirname(HERE)
 DEFAULT_FORBID = ("Defence",)
 
 
+# Every CLI call gets a timeout. Without one, `subprocess.run` waits forever:
+# one hung request wedges the whole loop, and the process stays alive reporting
+# nothing -- indistinguishable from working. keepalive.py, the watchdog itself,
+# did exactly this: alive for hours after its last successful action while all
+# three characters sat offline underneath it.
+CLI_TIMEOUT = 90
+
+
 def cli(character, *args):
-    r = subprocess.run(
-        ["python3", "clawscape.py", "--character", character] + list(args),
-        capture_output=True,
-        text=True,
-        cwd=CLI_DIR,
-    )
+    try:
+        r = subprocess.run(
+            ["python3", "clawscape.py", "--character", character] + list(args),
+            capture_output=True,
+            text=True,
+            cwd=CLI_DIR,
+            timeout=CLI_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return {}
     try:
         return json.loads(r.stdout)
     except Exception:
