@@ -202,6 +202,11 @@ def main(argv):
         help="x,z to return to after every attack; the tile the target cannot reach",
     )
     ap.add_argument(
+        "--target",
+        default=None,
+        help="x,z of the ONE spawn to attack; required for safespotting",
+    )
+    ap.add_argument(
         "--kite",
         type=int,
         default=0,
@@ -210,6 +215,9 @@ def main(argv):
     a = ap.parse_args(argv)
 
     takes = a.take or list(DEFAULT_TAKE)
+    pin = None
+    if a.target:
+        pin = tuple(int(v) for v in a.target.split(","))
     safespot = None
     if a.safespot:
         safespot = tuple(int(v) for v in a.safespot.split(","))
@@ -280,10 +288,20 @@ def main(argv):
 
         target = None
         for n in d.get("nearbyNpcs") or []:
-            if (a.npc or "").lower() in (n.get("name") or "").lower():
-                if (n.get("hp") is None) or n.get("hp", 1) > 0:
-                    target = n
-                    break
+            if (a.npc or "").lower() not in (n.get("name") or "").lower():
+                continue
+            if (n.get("hp") is not None) and n.get("hp", 1) <= 0:
+                continue
+            # A safespot works against ONE spawn, not against the species. The
+            # first safespot test failed for exactly this reason: the loop
+            # attacked the nearest giant, seven tiles off at the edge of bow
+            # range, so the character walked in to close -- and the tile chosen
+            # to be unreachable by a different giant became irrelevant.
+            if pin is not None:
+                if (n.get("x"), n.get("z")) != pin:
+                    continue
+            target = n
+            break
         if target is None:
             taken += sweep(a.character, takes)
             emit(round=r, note="no target in range", taken=taken)

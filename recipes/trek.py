@@ -220,12 +220,34 @@ def try_open_blocker(character, state, here, want):
     opened = False
     for loc in state.get("nearbyLocs") or []:
         at_t = (loc.get("x"), loc.get("z"))
-        # A gate is not on your tile; it is on the tile BETWEEN you and where
-        # you are going. Matching only `here` and `want` misses every gate
-        # there is: a scout stood one tile east of an open-able gate for 97
-        # legs while the gate sat in its own nearbyLocs the whole time.
-        if max(abs(at_t[0] - here[0]), abs(at_t[1] - here[1])) > 1:
+        # A gate is not on your tile, and it is not always adjacent either.
+        # Matching `here`/`want` missed every gate; matching only adjacent
+        # tiles then missed the same gate again from five tiles away, because
+        # the leg fails at a distance and the character never approaches.
+        #
+        # So: consider any gate within reach that lies roughly toward the
+        # target, walk up to it, and open it. Twice now the gate has been
+        # sitting in nearbyLocs, offering "Open", while a character reported
+        # impassable terrain.
+        dist = max(abs(at_t[0] - here[0]), abs(at_t[1] - here[1]))
+        if dist > 8:
             continue
+        toward = (at_t[0] - here[0]) * (want[0] - here[0]) + (at_t[1] - here[1]) * (
+            want[1] - here[1]
+        )
+        if dist > 1 and toward <= 0:
+            continue
+        if dist > 1:
+            # step beside it first; you cannot open what you cannot reach
+            walk.cli(
+                character,
+                "act",
+                "walkTo",
+                "--json",
+                json.dumps({"x": at_t[0] + 1, "z": at_t[1], "running": True}),
+            )
+            walk.cli(character, "wait", "4")
+            here = walk.settled(character)[0]
         name = (loc.get("name") or "").lower()
         if not (
             any(w in name for w in OPENABLE_NAMES)
