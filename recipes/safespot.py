@@ -147,7 +147,20 @@ def reachable_from(start, walk, edges, diagonal=True):
             n = (x + dx, z + dz)
             if n in seen or n not in walk:
                 continue
-            if ((x, z), n) in edges:
+            if dx and dz:
+                # A diagonal step cannot cut the corner of a wall. `wall_edges`
+                # only ever stores ORTHOGONAL transitions, so testing the
+                # diagonal pair against it always passes and a BFS walks
+                # straight through masonry. That bug made the Edgeville dungeon
+                # moss giants look reachable from a corridor that is sealed:
+                # the path it produced crossed `oldwall_blackback_a` at x3152
+                # on a diagonal.
+                side_a, side_b = (n[0], z), (x, n[1])
+                if ((x, z), side_a) in edges or ((x, z), side_b) in edges:
+                    continue
+                if side_a not in walk and side_b not in walk:
+                    continue
+            elif ((x, z), n) in edges:
                 continue
             seen.add(n)
             q.append(n)
