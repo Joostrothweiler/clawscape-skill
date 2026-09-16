@@ -204,7 +204,29 @@ def main(argv):
     ap.add_argument(
         "--target",
         default=None,
-        help="x,z of the ONE spawn to attack; required for safespotting",
+        help="x,z of the ONE SPAWN TILE to attack; required for safespotting",
+    )
+    ap.add_argument(
+        "--target-radius",
+        type=int,
+        default=5,
+        help=(
+            "how far from --target the pinned spawn may have wandered. An npc's "
+            "`wanderrange` means it is almost never standing on its own spawn "
+            "tile, so an exact match pins nothing; default is a moss giant's "
+            "maxrange of 5"
+        ),
+    )
+    ap.add_argument(
+        "--weapon-range",
+        type=int,
+        default=0,
+        help=(
+            "skip attacks on targets further than this, in tiles. Attacking "
+            "something out of range makes the character WALK to it, which is "
+            "exactly how a safespot is lost; the obj param is 10 for a longbow "
+            "and 7 for a shortbow. 0 disables the check"
+        ),
     )
     ap.add_argument(
         "--kite",
@@ -298,7 +320,23 @@ def main(argv):
             # range, so the character walked in to close -- and the tile chosen
             # to be unreachable by a different giant became irrelevant.
             if pin is not None:
-                if (n.get("x"), n.get("z")) != pin:
+                # Match the SPAWN, not the tile it happens to be standing on.
+                # A moss giant wanders 3 tiles, so an exact comparison pins
+                # nothing and the loop silently falls through to "no target".
+                if (
+                    max(abs(n.get("x", 0) - pin[0]), abs(n.get("z", 0) - pin[1]))
+                    > a.target_radius
+                ):
+                    continue
+            if a.weapon_range:
+                here = (
+                    (d.get("player") or {}).get("worldX"),
+                    (d.get("player") or {}).get("worldZ"),
+                )
+                if (
+                    max(abs(n.get("x", 0) - here[0]), abs(n.get("z", 0) - here[1]))
+                    > a.weapon_range
+                ):
                     continue
             target = n
             break
@@ -322,14 +360,17 @@ def main(argv):
         )
         walk.cli(a.character, "wait", "8")
 
-        # Attacking WALKS YOU TO THE TARGET. That is what breaks a safespot:
-        # the tile was chosen because the monster cannot reach it, and the
-        # attack command promptly carries you off it into melee range. Measured
-        # at (2544,3413): ten attacks, character ended at (2544,3408), 18
-        # damage taken, safespot entirely defeated by its own attack.
+        # Attacking does NOT normally move you: `player_combat.rs2` fires from
+        # where you stand whenever the target is inside the weapon's
+        # `attackrange`. Measured on 2026-09-16, every attack issued with a
+        # clear line of sight at 3 to 10 tiles moved the character zero tiles.
         #
-        # So step back after every attack. Ranged hits from the safespot, the
-        # monster swings at empty air.
+        # But it is not every attack. Roughly one in six still walked her in
+        # with a clear line -- most likely the target moving between the state
+        # read and the dispatch, so the engine saw a blocked line. That is
+        # cheap to correct and expensive to ignore, so re-assert the tile after
+        # every attack. Against a leashed monster, stepping back outside its
+        # `maxrange` breaks contact for good rather than merely postponing it.
         if safespot:
             at_now, _ = walk.settled(a.character)
             if tuple(at_now) != safespot:

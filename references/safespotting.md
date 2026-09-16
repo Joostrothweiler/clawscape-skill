@@ -1,125 +1,180 @@
-# Safespotting and kiting
+# Safespotting
 
-**Status: the mechanic is now measured. Kiting is disproven; a genuine
-safespot is untested but no longer ruled out.** Written down at this stage because the failure is
-the expensive part and somebody else will otherwise pay for it again.
+**Status: solved, and it was never about terrain.** The mechanism is the
+monster's leash, it is written down in the world's own npc config, and it works
+in open grass.
 
-## The idea
+## The rule, in one line
 
-A melee monster that cannot path to any tile adjacent to you cannot hit you. If
-you can attack it from there with Ranged or Magic, you take no damage at all,
-which removes the food ceiling and makes farming indefinite rather than
-bounded by how many lobsters fit in 28 slots.
+> Stand on **open ground the monster could walk to**, further from its **spawn
+> tile** than its `maxrange` and closer than your weapon's `attackrange`, with a
+> clear line of sight. It is willing to come and not allowed to, so it never
+> arrives -- and because the ground between you is walkable, your attack still
+> lands.
 
-## Safespots exist, and can be computed
+The "could walk to" is not a detail. A tile the monster cannot path to is a
+tile you cannot shoot from; see below. The safespot has to be somewhere it
+*would* reach if only it were permitted, which is why this works in open grass
+and never behind a wall.
 
-They can be found from the map data rather than hunted for by hand. A tile P is
-a safespot against a monster spawning at G when:
+For Arete against moss giants that is a three-tile window: `maxrange` 5, oak
+longbow `attackrange` 10, so **stand 8, 9 or 10 tiles from the spawn**.
 
-- P is walkable (not in `mapdata.terrain_blocked` or `solid_tiles`)
-- no tile adjacent to P is reachable by a BFS from G over walkable tiles,
-  respecting `mapdata.wall_edges`
-- P is within weapon range of G
+## The other method is dead, and this time from both sides
 
-Run against the moss giant camp west of Ardougne this yields **24 candidates**,
-for example **stand (2544,3413) against the giant at (2549,3408)**, range 5.
+The previous revision defined a safespot as a tile the monster cannot *path*
+to, and quoted "24 candidates at the moss giant camp west of Ardougne". Both
+halves of that are wrong, and the second half is worth knowing because it is
+the obvious idea and it costs a trip to find out.
 
-## A safespot is against ONE spawn, and attacking a second one throws it away
+**The number was not reproducible.** `recipes/safespot.py` now does that
+computation for real, and run over **every moss giant camp in the world** the
+terrain method returns exactly **one** usable tile -- on Crandor, behind a
+quest. At the Ardougne camp it returns **zero**, under a four-way BFS and an
+eight-way one alike. The camp is open grass; nothing there is unreachable. So
+the live attempt that "failed" there was not defeated by some attack mechanic,
+it was standing on a tile that was never a safespot.
 
-This is the operational catch, and it is easy to lose because the tile looks
-like a property of the place rather than of the pairing. **It is computed per
-spawn.** The BFS that proves nothing can reach you starts at G. A different
-giant, standing somewhere else in the same camp, has its own reachable set, and
-nothing in the computation says it cannot path to your tile. So the spot holds
-only while you attack the one spawn it was solved for.
+**And an unreachable target cannot be attacked at all.** Tested directly on
+2026-09-16 in the Edgeville dungeon, from a corridor at (3150,9904) with a wall
+between, against moss giants reading `reachable: false`:
 
-The failure is silent in the worst way: the first giant dies without touching
-you, the loop picks the nearest remaining target, and that one walks straight
-in. It will read as "the safespot stopped working" when what changed was the
-target.
+    12 attacks, at distances 5 to 10, every one:
+      "Interacting with NPC #2692 (unrouted - ap-range attempt)"
+      Ranged xp gained: 0        HP lost: 0
 
-This is why **`hunt.py --safespot` requires `--target`**. Pass the exact spawn
-coordinates and nothing else:
+Twelve rounds, well inside the bow's range of 10, and she neither took a hit
+nor landed one. **The wall that stops the monster stops the arrow.** The engine
+wants a walkable route to the target, not merely a line to it, and this
+confirms from the other direction what was already recorded in
+`mechanics.md`: `reachable` is a precondition for every attack style, not a
+hint.
 
-    python3 recipes/hunt.py --character arete --npc "Moss giant" \
-        --safespot 2544,3413 --target 2549,3408
+So the terrain method is not merely rare, it is self-defeating: the property
+that makes a tile safe is the same property that makes the target
+unattackable. **Stop looking for walls. Look at `maxrange`.**
 
-Range 5 there is comfortably inside an Oak longbow's measured 9 (below), so the
-shot fires from the safespot without closing. **When the target dies, the right
-move is to wait for that same spawn to respawn, not to retarget.** A camp with
-one workable pairing is a camp with one giant's kill rate, and that is the
-honest throughput to plan around.
+## What the world's own scripts say
 
-**Worth checking live before the first trip:** a moss giant is level 42, and
-the usual rule is that a non-Wilderness aggressive monster stops attacking once
-the player's combat level passes roughly double its own. Arete is combat 85
-against a threshold of 84, i.e. one level over the line. If that rule holds
-here, the other giants ignore her entirely and only the attacked one is a
-problem. That rule is **not confirmed for this world** -- treat it as a thing to
-observe on arrival, not a safety margin to plan on.
+`scripts/skill_combat/scripts/player/player_combat.rs2`:
 
-## Attacking does NOT walk you out of your own safespot
+    [apnpc2,_] @player_combat_start_ap;
 
-An earlier revision of this page said it did, and concluded from that the whole
-method was defeated. **That was wrong, and it took a safespot camp off the
-table for no reason.** Measured live on 2026-09-16 with an Oak longbow, against
-Varrock palace guards:
+    [label,player_combat_start_ap]
+    def_int $attackrange = ~player_attackrange(inv_getobj(worn, ^wearpos_rhand));
+    if (($attackrange <= 1 & ~player_in_combat_check = false)
+        | npc_range(coord) > $attackrange) {
+        p_aprange($attackrange);
+        return;
+    }
+    @player_combat_start;
 
-| Target distance when the attack was issued | What the character did |
+The attack fires **from where you stand**. `p_aprange` -- the thing that walks
+you in -- runs only when the target is *further away* than the weapon reaches.
+Being dragged into melee is the out-of-range branch, not the normal one.
+
+`attackrange` is an obj param, not something to measure:
+
+| weapon | attackrange |
 | --- | --- |
-| 3 tiles (inside bow range) | **did not move at all**, fired from standing; the guard walked to her |
-| 14 tiles (outside bow range) | walked exactly **4 tiles**, stopped at **distance 9**, then stood and fired |
+| all longbows | **10** |
+| all shortbows | 7 |
+| autocast magic | 10 |
 
-    t+0  me=(3227,3469)  dist 14
-    t+2  me=(3223,3466)  dist 9    <- stopped here and stayed
-    t+5  me=(3223,3466)  dist 1    <- the GUARD closed, not her
+Longrange style adds 2, capped at 10 -- **and trains Defence**, so on a pure it
+is never worth the tile.
 
-So the rule is: **`interactNpc` Attack walks you only far enough to bring the
-target inside your weapon's range, and no further. Inside range you fire from
-where you stand.** Oak longbow range measured at **9 tiles**.
+And the leash is an npc param, `maxrange` in `scripts/_unpack/all.npc`:
 
-The earlier observation that "looked like" being dragged to melee -- a
-character at (2541,3422) ending up at (2544,3408) -- is this same rule with the
-target out of range: it closed to range and stopped. It landed in melee because
-the weapon's range was short, not because the attack overrides position.
+| npc | vislevel | wanderrange | maxrange |
+| --- | --- | --- | --- |
+| Moss giant | 48 | 3 | **5** |
+| Guard | 21 | 2 | 7 |
+| Giant rat | 6 | 6 | 8 |
+| Thief | 16 | 7 | 10 |
+| Skeleton | 22 | 9 | 11 |
+| Deadly red spider | 31 | 10 | 12 |
+| Goblin | 5 | 15 | 17 |
 
-**This means a computed safespot should hold**, as long as it satisfies the
-third criterion above: within weapon range of the spawn. The 24 candidates at
-the moss giant camp west of Ardougne were dismissed on a false premise and are
-still worth testing.
+Moss giants have the tightest leash of anything worth killing, which is what
+makes them the natural safespot target rather than merely a rich one.
 
-## Kiting does not work, and is worse than standing still
+## Measured live, 2026-09-16, Oak longbow against Varrock guards
 
-Tested the same day, `hunt.py --kite 5` against the same guards, Ranged 69,
-Defence 1, no armour:
+The independent variable is the distance at the moment the attack is issued,
+recorded live rather than assumed, because the guard moves between samples.
 
-    round 1  hp 88     round 4  hp 65     round 7  hp 52
-    round 2  hp 79     round 5  hp 55
-    round 3  hp 78     round 6  hp 50
+| distance | line of sight | tiles the character moved |
+| --- | --- | --- |
+| 3 | clear | 0 |
+| 4 | clear | 0 |
+| 6 | clear | 0 |
+| 7 | clear | 0 |
+| 8 | clear | 0 |
+| 9 | clear | 0 |
+| 10 | clear | 0 |
+| 8 | clear | **7** |
+| 8 | blocked | 4 |
+| 9 | blocked | 4 |
+| 11 | clear | 4 (out of range: correct) |
+| 13 | blocked | 16 |
 
-95 -> 52 over 7 rounds, about **6 HP a round**. The melee baseline against the
-same guards was 88 -> 45 over 28 rounds, about **1.5 HP a round**. Backing away
-is worse than not bothering, and the reason follows from the rule above: the
-attack already fires from where you stand, so stepping back buys nothing, and
-the tiles spent walking are tiles not spent shooting while the monster closes
-anyway.
+Two things fall out of that, and the second is the operational one:
 
-**Kite is the wrong lever. The lever is terrain the monster cannot path
-through.** Treat `--kite` as disproven and spend the effort on `--safespot`.
+- **Inside `attackrange` with a clear line, the attack fires from standing.**
+  Every blocked-line sample walked her in, 4 to 16 tiles. Line of sight, not
+  distance, is what decides whether a tile holds.
+- **About one attack in six still closes anyway.** The two distance-8
+  clear-line samples are from the same tile against the same target, one moved
+  0 and one moved 7. The likely cause is the target moving between the state
+  read and the dispatch, so the engine evaluated a line we never saw. **A hunt
+  loop must therefore re-assert its tile after every attack.** Against a
+  leashed monster that correction is permanent rather than a postponement,
+  because stepping back outside `maxrange` breaks contact for good.
+
+## Using `recipes/safespot.py`
+
+    python3 recipes/safespot.py --npc mossgiant --range 10 --combat-level 85
+
+It reports, per spawn, the tiles inside weapon range, outside every nearby
+hostile's leash circle, with a clear line. Three things it does that are worth
+knowing:
+
+- **A safespot is a pairing, not a place.** The leash circle it clears is the
+  target's; every other spawn has its own. At the Ardougne camp the four giants
+  sit 5 to 7 tiles apart, so a tile 8 from one can be 4 from another -- and the
+  other is the one that kills you. This is why `hunt.py --safespot` requires
+  `--target`, and why **when the pinned giant dies the right move is to wait
+  for that same spawn**, not to retarget. One pairing is one giant's kill rate.
+- **`--target` is the SPAWN tile, not where the monster is standing.** It
+  wanders `wanderrange` tiles, so an exact match pins nothing; `--target-radius`
+  defaults to a moss giant's 5.
+- **Things that cannot attack are not threats.** An earlier pass counted
+  fishing spots and sheep herders as hazards and reported every tile at the
+  Ardougne camp compromised. Only spawns the world gives an `Attack` option
+  count, and those whose `vislevel * 2` is under our combat level are flagged
+  `likely_passive` -- they will not start a fight, though the threshold is the
+  usual rule rather than one confirmed in this world.
+
+## Kiting is still disproven
+
+`hunt.py --kite 5` against the same guards cost about **6 HP a round** against
+**1.5** for standing and meleeing. It follows directly from the rule above: the
+attack already fires from where you stand, so stepping back buys nothing and
+the monster closes anyway. **Kite is the wrong lever. The leash is the lever.**
 
 ## Prayer is not a substitute
 
-Protect from Melee (Prayer 43) is available and does reduce damage, but it
-**drains**: cost 12 on a 5-tick timer, against a prayer pool equal to the Prayer
-level. It buys a fight, not a camp. Useful while closing or retreating; not a
-way to stand in melee indefinitely.
+Protect from Melee (Prayer 43) reduces damage but drains 12 on a 5-tick timer
+against a pool equal to the Prayer level. It buys a fight, not a camp.
 
 ## Things worth doing while you are there
 
-- **Bury the bones.** Every kill drops them, they occupy a slot, and burying is
-  free Prayer xp. Confirmed working: Prayer 50 -> 51 inside ten kills.
-- **Pick the arrows back up.** Every ranged shot is an arrow on the ground at
-  the target's feet. A hunt that does not collect them runs out; one that does
-  is close to self-sustaining. Confirmed: +25 arrows recovered over 10 rounds.
-- Drops land at the **target's** feet, not yours, so a sweep has to walk to them
-  -- `pickupItem` on something out of reach just answers "I can't reach that!".
+- **Bury the bones.** Every kill drops them, they take a slot, burying is free
+  Prayer xp. Confirmed: Prayer 50 to 51 inside ten kills.
+- **Pick the arrows back up.** Every shot is an arrow at the target's feet. A
+  hunt that collects them is close to self-sustaining: +25 recovered over 10
+  rounds.
+- Drops land at the **target's** feet, not yours, so a sweep has to walk to
+  them. Against a leashed monster that walk crosses into its circle, so sweep
+  between kills, not during one.
