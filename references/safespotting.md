@@ -24,6 +24,40 @@ a safespot against a monster spawning at G when:
 Run against the moss giant camp west of Ardougne this yields **24 candidates**,
 for example **stand (2544,3413) against the giant at (2549,3408)**, range 5.
 
+## A safespot is against ONE spawn, and attacking a second one throws it away
+
+This is the operational catch, and it is easy to lose because the tile looks
+like a property of the place rather than of the pairing. **It is computed per
+spawn.** The BFS that proves nothing can reach you starts at G. A different
+giant, standing somewhere else in the same camp, has its own reachable set, and
+nothing in the computation says it cannot path to your tile. So the spot holds
+only while you attack the one spawn it was solved for.
+
+The failure is silent in the worst way: the first giant dies without touching
+you, the loop picks the nearest remaining target, and that one walks straight
+in. It will read as "the safespot stopped working" when what changed was the
+target.
+
+This is why **`hunt.py --safespot` requires `--target`**. Pass the exact spawn
+coordinates and nothing else:
+
+    python3 recipes/hunt.py --character arete --npc "Moss giant" \
+        --safespot 2544,3413 --target 2549,3408
+
+Range 5 there is comfortably inside an Oak longbow's measured 9 (below), so the
+shot fires from the safespot without closing. **When the target dies, the right
+move is to wait for that same spawn to respawn, not to retarget.** A camp with
+one workable pairing is a camp with one giant's kill rate, and that is the
+honest throughput to plan around.
+
+**Worth checking live before the first trip:** a moss giant is level 42, and
+the usual rule is that a non-Wilderness aggressive monster stops attacking once
+the player's combat level passes roughly double its own. Arete is combat 85
+against a threshold of 84, i.e. one level over the line. If that rule holds
+here, the other giants ignore her entirely and only the attacked one is a
+problem. That rule is **not confirmed for this world** -- treat it as a thing to
+observe on arrival, not a safety margin to plan on.
+
 ## Attacking does NOT walk you out of your own safespot
 
 An earlier revision of this page said it did, and concluded from that the whole
