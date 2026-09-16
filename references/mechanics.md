@@ -294,6 +294,19 @@ doubt is the thing that matters: the curve is far flatter than the 13,034,431
 of the standard table, so a goal sized against that table is overstated by
 something between 5× and 14×.
 
+## A shop's markup is per stock line, not per shop
+
+One visit to Lowe's Archery Emporium, 2026-09-16, paid **exactly the listed
+price** for an Oak longbow (160 listed, 160 charged) and **1.79x the listed
+price** for Iron arrows (3 listed, 5.37 charged) -- same shop, same visit, same
+purse. So neither "listed price is what you pay" nor "this shop overcharges"
+generalises. Budget every line from a measured coin delta, and use `shop.py`,
+which meters the spend and verifies against the inventory.
+
+Also worth recording: **`bankWithdraw` honours `amount` for non-stackables**
+(24 lobsters came out on one call), while `bankDeposit` does not and moves one
+per call. The two are not symmetric.
+
 ## A dropped item is private to the dropper at first
 
 This one masquerades as a despawn, and getting it wrong makes the simplest
