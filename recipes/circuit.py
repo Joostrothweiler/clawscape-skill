@@ -313,6 +313,7 @@ def cook_all(ch):
             break
     goto(ch, [RANGE_LOC], tol=2)
     cooked = 0
+    stalled = 0
     for _ in range(40):
         d = st(ch)
         raw = [i for i in (d.get("inventory") or []) if i["name"] == "Raw lobster"]
@@ -328,10 +329,13 @@ def cook_all(ch):
                 break
         if not rng:
             return cooked, "no range in reach"
+        # The field is `itemSlot`. `slot` dispatches "success", cooks nothing,
+        # and writes no message at all -- two whole laps banked their catch raw
+        # because of it, while the loop below cheerfully counted 40 "cooks".
         act(
             ch,
             "useItemOnLoc",
-            slot=raw[0]["slot"],
+            itemSlot=raw[0]["slot"],
             locId=rng["id"],
             x=rng["x"],
             z=rng["z"],
@@ -339,7 +343,20 @@ def cook_all(ch):
         cli(ch, "wait", "6")
         dialogue(ch, ["All"], rounds=2)
         cli(ch, "wait", "20")
-        cooked += 1
+        # Count what is in the pack, never the number of calls made. The first
+        # version incremented per dispatch and so reported "cooked: 40" for two
+        # laps that cooked nothing whatsoever -- the report agreed with itself
+        # and with nothing else.
+        after = len(
+            [i for i in (st(ch).get("inventory") or []) if i["name"] == "Raw lobster"]
+        )
+        if after >= len(raw):
+            stalled += 1
+            if stalled >= 3:
+                return cooked, "raw count not falling; cooking is not happening"
+        else:
+            stalled = 0
+        cooked += len(raw) - after
     # The door closes behind you, so the way out needs opening from the
     # inside as well. Skipping this leaves the character shut in a kitchen,
     # which reads from outside as a frozen session.
