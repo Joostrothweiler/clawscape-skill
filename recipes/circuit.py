@@ -370,10 +370,20 @@ def cook_all(ch):
 
 
 def deposit_catch(ch):
+    """Bank the catch, and MEASURE what each call actually moved.
+
+    `bankDeposit`'s `amount` is documented as honoured only for stackables,
+    which would make 26 cooked lobsters 26 calls. A run appeared to clear them
+    in one, but the call counter alone cannot tell "one call moved everything"
+    from "the loop exited early", so it settled nothing.
+
+    So count the inventory either side of each call and report it. A question
+    that keeps coming back deserves instrumentation rather than another guess.
+    """
     d = bank_open(ch)
     if not d:
-        return 0
-    n = 0
+        return 0, []
+    calls = []
     for _ in range(40):
         d = st(ch)
         rows = [
@@ -383,10 +393,21 @@ def deposit_catch(ch):
         ]
         if not rows:
             break
+        before = len(rows)
+        name = rows[0]["name"]
         act(ch, "bankDeposit", slot=rows[0]["slot"], amount=10000)
-        n += 1
+        after = len(
+            [
+                i
+                for i in (st(ch).get("inventory") or [])
+                if i["name"] in ("Lobster", "Burnt lobster", "Raw lobster")
+            ]
+        )
+        calls.append(
+            {"item": name, "before": before, "after": after, "moved": before - after}
+        )
     act(ch, "closeModal")
-    return n
+    return len(calls), calls
 
 
 def main(argv):
@@ -436,7 +457,7 @@ def main(argv):
         cross_gangplank(ch, *GANGPLANK_SARIM)
         goto(ch, TO_FALADOR)
         cooked, why = cook_all(ch)
-        banked = deposit_catch(ch)
+        banked, deposit_calls = deposit_catch(ch)
         d = st(ch)
         emit(
             lap=lap,
@@ -444,6 +465,7 @@ def main(argv):
             raw_caught=caught,
             cooked=cooked,
             bank_calls=banked,
+            deposit_measurements=deposit_calls,
             minutes=round((time.time() - t0) / 60, 1),
         )
     return 0
