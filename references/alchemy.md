@@ -24,6 +24,25 @@ reagents), **coins** ("Coins are already made of gold"), and one joke item.
 
 Live XP is the config value x2.5; see `mechanics.md` for the multiplier.
 
+**Both spells confirmed live on 2026-09-16**, cast on Lobster (`cost=150`):
+low alchemy paid **60 gp / 775 xp**, high alchemy **90 gp / 1625 xp**, one
+nature rune each. A **Staff of fire** supplies the fire runes for free, so the
+only consumable is the nature rune. Magic 50 -> 55 took **15 low alchs**, which
+makes the level-55 gate far cheaper than it looks.
+
+**Caution: about 1 cast in 5 is a silent no-op.** Ten dispatches all returned
+`success: true` but only eight consumed an item and paid out. Count the item,
+not the dispatch.
+
+## Route three: alch what you already fish
+
+Overlooked because it needs no combat and no travel. A **cooked Lobster's
+`cost` is 150**, so it high-alchs for **90 gp** against the **37-38 gp** a
+general store pays, and pays **1625 Magic xp** on top. For a character with
+Fishing 99 and a working lobster circuit, that turns food into a renewable
+alchemy feedstock and makes the whole loop self-supplying: fish it, cook it,
+alch it. Keep a real food reserve before alching the stock down.
+
 ## Route one: kill things and alch the drops
 
 **Moss giants are the best target in the game for this**, and not narrowly --
