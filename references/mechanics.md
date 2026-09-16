@@ -540,6 +540,72 @@ message text ("Morgra" comes back as "morgra"). A `privateMessage` echo shows
 the **target's** name in `sender` with `fromSelf: true` — that is your own
 message, not a reply.
 
+## An action's field names are exact, and a wrong one fails silently
+
+This is the most expensive cheap bug in the API. `useItemOnLoc` requires
+**`itemSlot`**, not `slot`. Sending `slot` returns:
+
+    {"success": true, "message": "Using item on location", "phase": "dispatch"}
+
+and then **nothing happens at all**. No error, no refusal, and critically **no
+entry in `state messages`** -- the message log still showed the previous
+action. Thirty consecutive calls cooked zero lobsters and looked, from every
+signal available, like the range was out of reach.
+
+`setCombatStyle` is the same shape: it takes **`style`**, not `styleIndex`,
+though that one at least answers `{"error": "setCombatStyle takes style."}`.
+
+**Run `clawscape.py actions <type>` and read `required` before writing the
+payload.** It is one call and it is authoritative:
+
+    $ python3 clawscape.py actions useItemOnLoc
+    {"type":"useItemOnLoc","required":["itemSlot","x","z","locId"],"optional":[]}
+
+The general rule: `success: true` means the request parsed, not that the game
+did anything. When an action has no visible effect, **check the field names
+before blaming the world**, and confirm against `state messages` -- a real
+interaction almost always writes a line there.
+
+## Dialogue: read the options, and re-open a conversation that closed
+
+Three things, each of which cost a trip.
+
+**A continuation page carries a real option with its own index.** It is not
+always 0. The Customs officer's continue page reports:
+
+    {"index": 1, "text": "Click here to continue", "componentId": 972,
+     "buttonType": 6}
+
+So send `opts[0]["index"]` when there is exactly one option, and fall back to 0
+only when the options list is genuinely empty. Note `shop.py` sends 0 and works
+for the shops it drives; that is a property of those dialogues, not a rule.
+
+**An option's `index` is not its position in the list.** Match on `text`, then
+send that option's own `index` field.
+
+**A dialog that closes before you are finished cannot be advanced.** More
+clicks go nowhere. The NPC has to be **talked to again and the answers
+restarted from the top**. A boat routine that answered once and then polled
+`player.level` waiting for it to change stranded a character on Karamja with a
+full inventory, because the conversation had simply ended early.
+
+**And never answer an unmatched multi-option page with a guess.** The Customs
+officer branches: "Can I journey on this ship?" then "Search away, I have
+nothing to hide." then "Ok." Clicking 1 blindly lands on "Why?" and loops
+through an explanation about imported spirits.
+
+## A door closes behind you
+
+The Falador range at (3036,3342) sits in a walled house whose door is at
+(3037,3347), entered from (3037,3348). Opening it, walking in and cooking works
+-- and then **the door is shut again and the character is sealed in the
+kitchen**. It has to be opened from the inside too.
+
+This matters beyond the inconvenience: a character standing in a closed room is
+indistinguishable, from outside, from a frozen session. Any recipe that enters a
+building through a door must open that door on the way out as part of the same
+routine, not as an afterthought.
+
 ## Banking
 
 **One bank, readable from any town.** Items banked at Edgeville came back on the
