@@ -327,6 +327,17 @@ def main(argv):
         ),
     )
     ap.add_argument(
+        "--sweep-every",
+        type=int,
+        default=2,
+        help="every N rounds, walk the kill site and collect properly rather "
+        "than only what landed within --safe-pickup. Needed because the target "
+        "wanders before it dies, so the drop is usually outside that radius, "
+        "and on a multi-spawn tile the loop never goes idle long enough for "
+        "the unbounded sweep to run. Without it, 42 kills produced 5 bones. "
+        "0 disables it.",
+    )
+    ap.add_argument(
         "--safe-pickup",
         type=int,
         default=3,
@@ -537,6 +548,20 @@ def main(argv):
         # One walkTo is not enough either. A call moves 7 to 8 tiles, so a
         # 9-tile return needs more than one and `wait 4` does not finish the
         # first. Loop until the tile is under her.
+        # On a sweep round, collect AT THE CORPSE, before going home. The
+        # bounded sweep below cannot reach a drop 8 to 13 tiles out, because
+        # the target wanders up to `wanderrange` from its spawn before dying
+        # and `scanGroundItems` is centred on the character. The cost of not
+        # doing this was measured: **42 kills for 5 bones buried**, against a
+        # guaranteed `death_drop,big_bones` on every moss giant. A missing bone
+        # is a collection failure, never a drop that did not happen.
+        #
+        # This is the round's one moment of deliberate exposure, which is why
+        # it is every Nth round: the giant that dropped the loot is dead, and
+        # the walk home follows immediately.
+        if a.sweep_every and r % a.sweep_every == 0:
+            taken += sweep(a.character, takes, limit=12)
+            buried += bury_bones(a.character, state(a.character) or {})
         hold_safespot(a.character, safespot, tries=6)
         # Collect what landed inside the safe radius every round. Without this
         # a three-spawn tile never sweeps at all, because it never goes idle.
