@@ -63509,6 +63509,193 @@
       ],
       "obstacles_crossed": [],
       "timestamp": "2026-09-17T17:09:02Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:33:39Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:33:46Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:33:51Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:33:57Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:03Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:08Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:14Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:20Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:25Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:32Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:38Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:43Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2939,
+        3273
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:34:56Z"
+    },
+    {
+      "from": [
+        2936,
+        3272
+      ],
+      "to": [
+        2936,
+        3268
+      ],
+      "hops": [
+        [
+          2935,
+          3269
+        ]
+      ],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:35:07Z"
     }
   ],
   "crossings": [
@@ -84092,6 +84279,23 @@
       "hops": [],
       "obstacles_crossed": [],
       "timestamp": "2026-09-17T17:08:17Z",
+      "stuck_at": [
+        2935,
+        3269
+      ]
+    },
+    {
+      "from": [
+        2935,
+        3269
+      ],
+      "to": [
+        2931,
+        3265
+      ],
+      "hops": [],
+      "obstacles_crossed": [],
+      "timestamp": "2026-09-17T17:35:37Z",
       "stuck_at": [
         2935,
         3269
