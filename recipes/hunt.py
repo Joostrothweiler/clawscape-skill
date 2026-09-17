@@ -478,6 +478,16 @@ def main(argv):
         "does land out of reach, and measure it.",
     )
     ap.add_argument(
+        "--loot-sortie",
+        type=int,
+        default=1,
+        help="on a loot round, step out to the pinned spawns to scan from "
+        "there before returning. scanGroundItems reaches only about 13 tiles "
+        "and is centred on the character, so a corpse 14 or 16 tiles from the "
+        "safespot is invisible from it and its drops are never collected. "
+        "0 disables the sortie.",
+    )
+    ap.add_argument(
         "--loot-every",
         type=int,
         default=6,
@@ -736,6 +746,30 @@ def main(argv):
         taken += sweep(
             a.character, takes, limit=10, within=a.safe_pickup, origin=origin
         )
+        # `scanGroundItems` is centred on the character and reaches about 13
+        # tiles. The corpse is often further: the spawn sits 8 or 9 tiles from
+        # a safespot and the target wanders up to `wanderrange` before dying,
+        # so a drop at 14 or 16 is simply INVISIBLE from the tile and can never
+        # be collected. Watching the ground continuously is what showed it -
+        # every sample capped at distance 13 while coins and bones sat on
+        # screen further out.
+        #
+        # So step out to the spawns once a loot round, scan from there, and
+        # come straight back. One short sortie per six attacks, not per shot.
+        if pins and a.loot_sortie:
+            cx = sum(q[0] for q in pins) // len(pins)
+            cz = sum(q[1] for q in pins) // len(pins)
+            walk.cli(
+                a.character,
+                "act",
+                "walkTo",
+                "--json",
+                json.dumps({"x": cx, "z": cz, "running": True}),
+            )
+            walk.cli(a.character, "wait", "6")
+            taken += sweep(a.character, takes, limit=10)
+            if safespot:
+                hold_safespot(a.character, safespot, tries=4)
         buried += bury_bones(a.character, state(a.character) or {})
         if safespot:
             hold_safespot(a.character, safespot, tries=4)
