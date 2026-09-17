@@ -96,3 +96,44 @@ class MessageLog(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HuntAmmo(unittest.TestCase):
+    """The empty quiver is the same silent stop as the unwielded staff."""
+
+    def setUp(self):
+        import hunt
+
+        self.hunt = hunt
+        self._walk = hunt.walk
+
+    def tearDown(self):
+        self.hunt.walk = self._walk
+
+    def test_ammo_already_worn_needs_no_call(self):
+        self.hunt.walk = FakeWalk([{}])
+        d = {"equipment": [{"name": "Iron arrow"}], "inventory": []}
+        self.assertTrue(self.hunt.rewield_ammo("arete", d))
+        self.assertEqual(self.hunt.walk.calls, [])
+
+    def test_recovered_arrows_are_wielded_by_their_own_opindex(self):
+        worn = {"equipment": [{"name": "Iron arrow"}]}
+        self.hunt.walk = FakeWalk([worn])
+        d = {
+            "equipment": [{"name": "Oak longbow"}],
+            "inventory": [
+                {
+                    "slot": 4,
+                    "name": "Iron arrow",
+                    "optionsWithIndex": [{"text": "Wield", "opIndex": 2}],
+                }
+            ],
+        }
+        self.assertTrue(self.hunt.rewield_ammo("arete", d))
+        acts = [c for c in self.hunt.walk.calls if c[0] == "act"]
+        self.assertEqual(json.loads(acts[0][-1])["optionIndex"], 2)
+
+    def test_no_ammo_anywhere_reports_false(self):
+        self.hunt.walk = FakeWalk([{"equipment": [{"name": "Oak longbow"}]}])
+        d = {"equipment": [{"name": "Oak longbow"}], "inventory": []}
+        self.assertFalse(self.hunt.rewield_ammo("arete", d))
