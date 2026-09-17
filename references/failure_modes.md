@@ -191,6 +191,21 @@ The dragon ids are not contiguous: red 53, black 54, blue 55, and **green 941**.
 A guard that checked a range missed green dragons entirely, and an agent died to
 them.
 
+### An option's `opIndex` is the index; its position in the list is not
+
+`useInventoryItem` with the wrong `optionIndex` returns `success: true` and
+does nothing. `alch.py` computed `list.index("Wield") + 1` and sent **1** for a
+staff whose only option is `{"text": "Wield", "opIndex": 2}`, so the staff
+never left the pack and **30 alchs in a row consumed nothing**. The same rule
+already bit dialogue handling, where an option's own `index` is likewise not
+its position.
+
+**Guard:** read `opIndex` off the option you matched, then **verify the state
+changed** -- for a wield, that the equipment slot now holds it. And where a
+loop has an obvious canary, check it on the first iteration: `alch.py` now
+stops if cast one gains no xp, and prints the last game message, which said
+`"You do not have enough Fire Runes to cast this spell."` the whole time.
+
 ## Working on the repo
 
 ### `ruff` is for Python, never JSON

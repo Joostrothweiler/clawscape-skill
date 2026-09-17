@@ -69,6 +69,11 @@ def stack(d, name):
     )
 
 
+def last_message(d):
+    msgs = d.get("gameMessages") or []
+    return msgs[-1].get("text") if msgs else "no message"
+
+
 def xp(d, skill="Magic"):
     for s in d.get("skills") or []:
         if s["name"] == skill:
@@ -83,12 +88,36 @@ def level(d, skill="Magic"):
     return 0
 
 
+def staff_equipped(d):
+    return any(
+        (e.get("name") or "").startswith("Staff of fire")
+        for e in (d.get("equipment") or [])
+    )
+
+
 def wield_staff(ch, d):
-    """Fire runes are free while the staff is in hand, and only then."""
+    """Fire runes are free while the staff is in hand, and only then.
+
+    An option's **`opIndex` is the index**; its position in the list is not.
+    This read the position and added one, which sends 1 for a staff whose only
+    option is `{"text": "Wield", "opIndex": 2}`. The staff then stays in the
+    pack, every cast answers `success: true`, and the only trace is
+    "You do not have enough Fire Runes to cast this spell." in `state
+    messages`. That cost 30 casts before anyone looked at the message log, so
+    this now **verifies the equipment slot** rather than trusting the dispatch.
+    """
+    if staff_equipped(d):
+        return True
     for i in d.get("inventory") or []:
         if i["name"].startswith("Staff of fire"):
-            opts = [o.get("text") for o in (i.get("optionsWithIndex") or [])]
-            idx = (opts.index("Wield") + 1) if "Wield" in opts else 2
+            idx = next(
+                (
+                    o.get("opIndex")
+                    for o in (i.get("optionsWithIndex") or [])
+                    if o.get("text") == "Wield"
+                ),
+                2,
+            )
             walk.cli(
                 ch,
                 "act",
@@ -97,11 +126,8 @@ def wield_staff(ch, d):
                 json.dumps({"slot": i["slot"], "optionIndex": idx}),
             )
             walk.cli(ch, "wait", "3")
-            return True
-    return any(
-        (e.get("name") or "").startswith("Staff of fire")
-        for e in (d.get("equipment") or [])
-    )
+            return staff_equipped(st(ch))
+    return False
 
 
 def main(argv):
@@ -122,14 +148,16 @@ def main(argv):
     if level(d) < need:
         raise SystemExit(json.dumps({"error": "Magic %d, need %d" % (level(d), need)}))
     if not wield_staff(ch, d):
-        emit(warning="no staff of fire; every cast will need 5 fire runes of its own")
+        emit(
+            warning="no staff of fire in hand; every cast needs 5 fire runes of its own"
+        )
     d = st(ch)
     x0, l0, t0 = xp(d), level(d), time.time()
     emit(
         start={
             "magic": l0,
             "xp": x0,
-            a.item: count(d, a.item),
+            a.item: stack(d, a.item),
             "nature_runes": stack(d, "Nature rune"),
         }
     )
@@ -137,7 +165,7 @@ def main(argv):
     casts = noops = 0
     while casts < a.max_casts:
         d = st(ch)
-        have = count(d, a.item)
+        have = stack(d, a.item)
         if have <= a.keep:
             reason = "reserve of %d reached" % a.keep
             break
@@ -154,8 +182,14 @@ def main(argv):
         )
         walk.cli(ch, "wait", "4")
         casts += 1
-        if count(st(ch), a.item) == have:
+        if stack(st(ch), a.item) == have:
             noops += 1
+        if casts == 1 and xp(st(ch)) == x0:
+            # The first cast is the canary. A run that is silently doing
+            # nothing looks exactly like a run that is working, and the reason
+            # is always in the message log.
+            reason = "first cast gained no xp: %s" % last_message(st(ch))
+            break
         if casts % a.report_every == 0:
             d = st(ch)
             emit(
@@ -163,7 +197,7 @@ def main(argv):
                 noops=noops,
                 magic=level(d),
                 xp_gained=xp(d) - x0,
-                left=count(d, a.item),
+                left=stack(d, a.item),
                 natures=stack(d, "Nature rune"),
             )
     else:

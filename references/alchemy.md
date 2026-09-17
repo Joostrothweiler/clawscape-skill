@@ -30,9 +30,40 @@ nature rune each. A **Staff of fire** supplies the fire runes for free, so the
 only consumable is the nature rune. Magic 50 -> 55 took **15 low alchs**, which
 makes the level-55 gate far cheaper than it looks.
 
-**Caution: about 1 cast in 5 is a silent no-op.** Ten dispatches all returned
-`success: true` but only eight consumed an item and paid out. Count the item,
-not the dispatch.
+**A silent no-op means the staff is not in hand, and the message log says so.**
+An earlier note here guessed "about 1 cast in 5 is a silent no-op". What
+actually happens is all-or-nothing: **30 consecutive casts returned
+`success: true`, consumed nothing and paid nothing**, because the staff of fire
+was sitting in the pack rather than worn. The only trace anywhere was
+`"You do not have enough Fire Runes to cast this spell."` in `state messages`.
+Count the item, not the dispatch -- and when the count does not move, **read
+the message log before theorising.**
+
+`useInventoryItem` wants the option's **own `opIndex`**, which for the staff is
+**2**; its position in the list is 0. `alch.py` sent position+1 and the staff
+stayed in the pack.
+
+## The feedstock does not have to be worth anything
+
+The payout scales with the item, **the experience does not**: every high alch
+is 1,625 xp whether the item alchs for 1 gp or 691. So for training Magic the
+right feedstock is the **cheapest item you can get in bulk**, not the most
+valuable one.
+
+That makes a **stackable** item worth far more than its price suggests, because
+alchemy is `inv_del(inv, $item, 1)` -- **one unit per cast, out of a stack**.
+A stack of 1,000 occupies **one inventory slot** and is a thousand casts with
+no banking, no travel and no pack management.
+
+**Feathers are the cheapest such stack in F2P.** `cost=2`, stackable, no
+`no_alchemy` param, and **Gerrant's Fishy Business in Port Sarim stocks 1,000
+of them** at 2 gp. Confirmed live on 2026-09-17: **30 feathers, one slot, 30
+casts, 48,750 xp, zero no-ops**, Magic 83 to 85 in 1.2 minutes, for a net 30 gp.
+
+At that rate the whole 1,000-feather shelf is **1,625,000 Magic xp for about
+2,000 gp**, which is more than Magic 1 to 99 costs. Compare the lobster route
+below: a lobster pays 90 gp instead of costing 1, but each one is a slot, and
+26 of them is a Karamja round trip.
 
 ## Route three: alch what you already fish
 
