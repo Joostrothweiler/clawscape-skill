@@ -393,6 +393,7 @@ def main(argv):
     ranged_camp = any(w in weapon for w in ("bow", "crossbow", "sling", "dart"))
     start = counts(d)
     t0 = time.time()
+    killed = 0
     kills = 0
     taken = 0
     buried = 0
@@ -546,6 +547,26 @@ def main(argv):
         # every attack. Against a leashed monster, stepping back outside its
         # `maxrange` breaks contact for good rather than merely postponing it.
         kills += 1
+        # Did the thing we attacked actually die? A "round" is one interactNpc
+        # plus a wait, NOT one kill: a moss giant takes about a dozen attacks.
+        # Everything below walks the character around to collect loot, and
+        # doing that after every ATTACK means wandering off mid-fight to pick
+        # up the arrow that was just fired. Mike spotted it from the live view.
+        # Only loot once the target is gone.
+        d_after = state(a.character) or {}
+        still_alive = any(
+            n.get("index") == target.get("index")
+            and (n.get("hp") is None or n.get("hp", 1) > 0)
+            for n in (d_after.get("nearbyNpcs") or [])
+        )
+        if still_alive:
+            # Stay put and keep shooting. The tile is only re-asserted if the
+            # attack dragged her off it, which is rare with a clear line.
+            at_now, _ = walk.settled(a.character)
+            if safespot and tuple(at_now) != safespot:
+                hold_safespot(a.character, safespot, tries=3)
+            continue
+        killed += 1
         # Return to the tile BEFORE looting, not after. The character is only
         # in danger while she is off the safespot, and loot is not urgent:
         # drops persist, damage does not. Sweeping first meant spending the
@@ -604,7 +625,8 @@ def main(argv):
             }
             emit(
                 round=r,
-                engaged=kills,
+                attacks=kills,
+                killed=killed,
                 picked_up=taken,
                 bones_buried=buried,
                 hp=(d.get("player") or {}).get("hp"),
