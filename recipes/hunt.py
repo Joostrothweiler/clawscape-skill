@@ -329,12 +329,20 @@ def main(argv):
                 ):
                     continue
             if a.weapon_range:
-                here = (
+                # Measure from the SAFESPOT, not from where the character is
+                # standing right now. Measuring from the live position makes
+                # this a ratchet: one drift puts her closer to the camp, which
+                # brings more giants inside range of the new spot, which pulls
+                # her further in. Measured at Ardougne, it walked her 14 tiles
+                # off her tile with a giant at distance 1. The safespot is the
+                # tile she is going to shoot from, so it is the one that
+                # decides what is in range.
+                origin = safespot or (
                     (d.get("player") or {}).get("worldX"),
                     (d.get("player") or {}).get("worldZ"),
                 )
                 if (
-                    max(abs(n.get("x", 0) - here[0]), abs(n.get("z", 0) - here[1]))
+                    max(abs(n.get("x", 0) - origin[0]), abs(n.get("z", 0) - origin[1]))
                     > a.weapon_range
                 ):
                     continue
@@ -342,6 +350,22 @@ def main(argv):
             break
         if target is None:
             taken += sweep(a.character, takes)
+            # sweep() walks to the drop, so this branch leaks the tile too.
+            if safespot:
+                for _ in range(4):
+                    at_now, _ = walk.settled(a.character)
+                    if tuple(at_now) == safespot:
+                        break
+                    walk.cli(
+                        a.character,
+                        "act",
+                        "walkTo",
+                        "--json",
+                        json.dumps(
+                            {"x": safespot[0], "z": safespot[1], "running": True}
+                        ),
+                    )
+                    walk.cli(a.character, "wait", "6")
             emit(round=r, note="no target in range", taken=taken)
             walk.cli(a.character, "wait", "5")
             continue
@@ -371,9 +395,24 @@ def main(argv):
         # cheap to correct and expensive to ignore, so re-assert the tile after
         # every attack. Against a leashed monster, stepping back outside its
         # `maxrange` breaks contact for good rather than merely postponing it.
+        kills += 1
+        taken += sweep(a.character, takes)
+        buried += bury_bones(a.character, state(a.character) or {})
+        # The re-assert has to be the LAST thing in the round. It used to run
+        # before the loot sweep, and `sweep` and `bury_bones` both walk the
+        # character to the drop, so every round ended standing on the corpse
+        # pile inside the giant's reach instead of on the safespot. Measured at
+        # the Ardougne camp: the character drifted 9 tiles off her tile and
+        # took 15 damage over a run that should have taken none.
+        #
+        # One walkTo is also not enough. A call moves 7 to 8 tiles, so a 9-tile
+        # return needs more than one, and `wait 4` does not even finish the
+        # first. Loop until the tile is actually under her.
         if safespot:
-            at_now, _ = walk.settled(a.character)
-            if tuple(at_now) != safespot:
+            for _ in range(6):
+                at_now, _ = walk.settled(a.character)
+                if tuple(at_now) == safespot:
+                    break
                 walk.cli(
                     a.character,
                     "act",
@@ -381,10 +420,7 @@ def main(argv):
                     "--json",
                     json.dumps({"x": safespot[0], "z": safespot[1], "running": True}),
                 )
-                walk.cli(a.character, "wait", "4")
-        kills += 1
-        taken += sweep(a.character, takes)
-        buried += bury_bones(a.character, state(a.character) or {})
+                walk.cli(a.character, "wait", "6")
         atlas.observe(state(a.character))
 
         if r % a.report_every == 0:
