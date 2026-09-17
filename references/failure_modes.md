@@ -100,6 +100,23 @@ day; opening it took one call.
 expect. When a boundary refuses a single step **and** the terrain flags say
 open, look for a nameless loc on the tile and read its **live** options.
 
+### Crops block movement and `blocked()` cannot see them
+
+`mapdata.blocked()` catches barriers by keyword: lava, railing, wall, fence,
+castle, hedge, crumbl, pileof, rubble, boulder, rock. **Wheat is not in that
+list, and a wheat field is solid.** The tiles read `reachable: false` live and
+refuse every step, but an offline path walks straight through them.
+
+Measured in the Ardougne farmland on 2026-09-17: **395 crop tiles** in one
+260x110 band that every planner treated as open ground. A route computed
+through them refuses at the field edge and looks exactly like a closed gate, a
+wall, or a dropped session.
+
+**Guard:** add crop names to the blocker set for any route near a farm --
+`wheat`, `barley`, `hops`, `potato`, `cabbage`, `onion`, `flax`, `corn`. And
+treat a refusal beside a farm as a crop until proved otherwise, rather than
+sweeping for a gate that is not there.
+
 ### Absence of a wall is not evidence; absence of a gate is
 
 The asymmetry is the useful part. "No gate in the data" means there is nothing
