@@ -438,6 +438,18 @@ Mithril battleaxe 1690gp) and no runes. It is saved as `recipes/routes.json`'s
 `bobs_axe_shop` landmark, which is the point of that file: a shop someone
 already found is a destination to travel to, not something to rediscover.
 
+
+### The listed `buyPrice` is a floor, and it climbs as the shelf empties
+
+Already recorded: a shelf's listed `buyPrice` is not what the purse is charged.
+What was missing is that the gap **widens as you buy**. Hickton's iron arrows
+list at **3 gp**. Buying 137 of them cost **2,042 coins**, which is **14.9 gp
+each**, and the first 80 in the same visit had gone at about 3.6.
+
+So a bulk purchase cannot be budgeted from the listed price at all. **Read the
+coin delta across the purchase**, stop when the effective price stops being
+worth it, and come back after a restock rather than buying a shelf to zero.
+
 ## Player-to-player trade
 
 `interactPlayer` opens a trade, and `state trade` reports `isOpen`, `screen`,
