@@ -240,6 +240,19 @@ stops if cast one gains no xp, and prints the last game message, which said
 Including ones running right now. **Merge, never overwrite** -- load both sides,
 union them, and assert nothing was lost before committing.
 
+**`git reset --hard` is an overwrite, and it does not feel like one.** On
+2026-09-17 a `git checkout main` was refused because those two files were
+dirty, and the reflex fix was `git reset --hard upstream/main`. That discarded a
+session's worth of freshly folded map: 100 walked tiles and the hop log for a
+mountain crossing nobody had ever recorded. `atlas.py fold` had already cleared
+`observations.jsonl`, so there was nothing to re-fold and the data was simply
+gone.
+
+**Guard:** these two files are shared state, not build output. Before any
+`reset --hard`, `checkout -f`, `clean`, or `stash drop` in this repo, commit
+them or copy them out. If a branch switch is refused because they are dirty,
+that refusal is the guard working.
+
 ### Branch from freshly fetched `upstream/main`
 
 A fork's `main` goes stale the instant an upstream PR squash-merges, and a
