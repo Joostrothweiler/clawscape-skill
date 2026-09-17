@@ -107,6 +107,29 @@ to open. "No wall in the data" means nothing at all.
 
 ## Searching and reasoning
 
+### A cheaper method is evidence about the method, never about the goal
+
+The quietest failure in this file, because nothing breaks and no report is
+wrong. A goal usually exists for several reasons. When a discovery makes one of
+them cheap or unnecessary, the goal stops feeling urgent and drifts out of the
+plan, even though the reasons the discovery did **not** address are still
+there, and are now a larger share of what is left.
+
+It happened on 2026-09-17. A moss giant camp was wanted for nature runes,
+alchable drops and Ranged experience. A stackable alchemy feedstock turned up
+that hour and killed the drops reason outright; the runes were already solved.
+Ranged survived, and was the character's biggest gap by twenty levels, so the
+camp had become **more** worth walking to, not less. Instead it stopped being
+mentioned and the cheap thing got finished. The owner had to ask where the
+camp had gone.
+
+**Guard:** when something gets cheaper, enumerate the reasons the goal existed,
+mark which ones actually died, re-rank on what survives, and **write the new
+ranking into whatever file the next session reads.** A priority that changes
+only inside one session's reasoning has not changed, it has been forgotten.
+Silence is how priorities die here, the same way silence is how broken loops
+hide, and the guard is the same: make it explicit, in a file.
+
 ### Never truncate a search you are about to conclude from
 
 `grep | head -10` hid the one relevant row twice in this project: once a
