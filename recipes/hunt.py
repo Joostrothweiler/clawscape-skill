@@ -186,6 +186,46 @@ def sweep(character, takes, limit=6):
     return took
 
 
+def rewield_ammo(character, d):
+    """Put recovered arrows back in the quiver.
+
+    A ranged camp recovers most of its own ammunition, but `sweep` puts the
+    arrows in the INVENTORY and the quiver stays empty. The loop then keeps
+    reporting engagements while firing nothing at all: the only trace anywhere
+    is "There is no ammo left in your quiver." in the message log. Four minutes
+    of a three-spawn camp were spent this way with four giants standing in
+    range.
+    """
+    equipped = any(
+        (e.get("name") or "").lower().endswith(("arrow", "arrows", "bolt", "bolts"))
+        for e in (d.get("equipment") or [])
+    )
+    if equipped:
+        return False
+    for i in d.get("inventory") or []:
+        name = (i.get("name") or "").lower()
+        if not (name.endswith("arrow") or name.endswith("bolts")):
+            continue
+        idx = next(
+            (
+                o.get("opIndex")
+                for o in (i.get("optionsWithIndex") or [])
+                if o.get("text") == "Wield"
+            ),
+            2,
+        )
+        walk.cli(
+            character,
+            "act",
+            "useInventoryItem",
+            "--json",
+            json.dumps({"slot": i["slot"], "optionIndex": idx}),
+        )
+        walk.cli(character, "wait", "3")
+        return True
+    return False
+
+
 def hold_safespot(character, safespot, tries=6):
     """Put the character back on its tile, and confirm it rather than assume.
 
@@ -226,8 +266,14 @@ def main(argv):
     )
     ap.add_argument(
         "--target",
+        action="append",
         default=None,
-        help="x,z of the ONE SPAWN TILE to attack; required for safespotting",
+        help="x,z of a SPAWN TILE to attack; required for safespotting. "
+        "Repeatable: one stand tile often sits inside weapon range of several "
+        "spawns while still outside every leash, and pinning only one leaves "
+        "the loop idle through the other respawns. At the Ardougne moss giant "
+        "camp, 24 of 38 rounds read 'no target in range' against one spawn, "
+        "and (2546,3400) covers three at 8, 8 and 9 tiles.",
     )
     ap.add_argument(
         "--target-radius",
@@ -260,9 +306,9 @@ def main(argv):
     a = ap.parse_args(argv)
 
     takes = a.take or list(DEFAULT_TAKE)
-    pin = None
+    pins = None
     if a.target:
-        pin = tuple(int(v) for v in a.target.split(","))
+        pins = [tuple(int(v) for v in t.split(",")) for t in a.target]
     safespot = None
     if a.safespot:
         safespot = tuple(int(v) for v in a.safespot.split(","))
@@ -342,13 +388,14 @@ def main(argv):
             # attacked the nearest giant, seven tiles off at the edge of bow
             # range, so the character walked in to close -- and the tile chosen
             # to be unreachable by a different giant became irrelevant.
-            if pin is not None:
+            if pins:
                 # Match the SPAWN, not the tile it happens to be standing on.
                 # A moss giant wanders 3 tiles, so an exact comparison pins
                 # nothing and the loop silently falls through to "no target".
-                if (
-                    max(abs(n.get("x", 0) - pin[0]), abs(n.get("z", 0) - pin[1]))
-                    > a.target_radius
+                if not any(
+                    max(abs(n.get("x", 0) - p[0]), abs(n.get("z", 0) - p[1]))
+                    <= a.target_radius
+                    for p in pins
                 ):
                     continue
             if a.weapon_range:
@@ -371,6 +418,10 @@ def main(argv):
                     continue
             target = n
             break
+        if rewield_ammo(a.character, d):
+            emit(round=r, note="re-wielded recovered ammunition")
+            d = state(a.character) or d
+
         if target is None:
             # Nothing alive in range, so this is the safe window: collect the
             # drops now, then get back on the tile before the respawn.
