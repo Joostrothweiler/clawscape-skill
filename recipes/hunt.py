@@ -572,11 +572,25 @@ def main(argv):
             taken += sweep(a.character, takes, limit=12)
             buried += bury_bones(a.character, state(a.character) or {})
         hold_safespot(a.character, safespot, tries=6)
-        # Collect what landed inside the safe radius every round. Without this
-        # a three-spawn tile never sweeps at all, because it never goes idle.
-        if safespot:
-            taken += sweep(a.character, takes, within=a.safe_pickup, origin=safespot)
-            hold_safespot(a.character, safespot, tries=3)
+        # Collect what landed inside the pickup radius every round. Without
+        # this a three-spawn tile never sweeps at all, because it never goes
+        # idle.
+        #
+        # This used to sit inside `if safespot:`, which meant a hunt WITHOUT a
+        # safespot never swept after a kill at all -- only the "no target"
+        # branch did. Measured: five kills at close range left a Big bones one
+        # tile away and `picked_up` at zero. Melee and kited hunts are exactly
+        # the ones whose drops land underfoot, so they were the worst served.
+        # The radius is measured from the safespot when there is one, and from
+        # the character when there is not.
+        here = safespot
+        if here is None:
+            d_now = state(a.character) or {}
+            pl = d_now.get("player") or {}
+            if pl.get("worldX") is not None:
+                here = (pl["worldX"], pl["worldZ"])
+        taken += sweep(a.character, takes, within=a.safe_pickup, origin=here)
+        hold_safespot(a.character, safespot, tries=3)
         buried += bury_bones(a.character, state(a.character) or {})
         atlas.observe(state(a.character))
 
