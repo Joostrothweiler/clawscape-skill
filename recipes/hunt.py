@@ -207,6 +207,20 @@ def sweep(character, takes, limit=6, within=None, origin=None):
         if not wanted(name, takes):
             skipped.append((name, "not wanted"))
             continue
+        # Exempting valuables from the radius was right and unbounded was not.
+        # With no cap the sweep kept walking at drops it could not path to and
+        # answering "I can't reach that!" round after round, which burned the
+        # rounds that should have been shots: the xp rate fell to a fifth.
+        # A valuable is worth extra tiles, never unlimited ones.
+        if (
+            within is not None
+            and origin is not None
+            and max(
+                abs(item.get("x", 0) - origin[0]), abs(item.get("z", 0) - origin[1])
+            )
+            > within + 8
+        ):
+            continue
         if within is not None and origin is not None and rank(item)[0] >= 3:
             if (
                 max(
