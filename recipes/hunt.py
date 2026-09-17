@@ -382,7 +382,27 @@ def alch_valuables(character, keep_runes=10, spell=1178):
         walk.cli(character, "wait", "4")
         if len((walk.state(character) or {}).get("inventory") or []) < before:
             cast += 1
-    wield("Oak longbow")
+    # Put the weapon back, and CHECK. If this silently fails the character is
+    # left holding a staff with no bow, every subsequent attack does nothing,
+    # and the loop reports a clean run while the xp sits still. That happened:
+    # the staff stayed equipped and the hunt quietly stopped landing hits.
+    for name in ("Oak longbow", "Longbow", "Shortbow"):
+        if wield(name):
+            break
+    weapon = next(
+        (
+            e.get("name")
+            for e in ((walk.state(character) or {}).get("equipment") or [])
+            if e.get("slot") == 3
+        ),
+        None,
+    )
+    if weapon is None or "staff" in (weapon or "").lower():
+        emit(
+            alch_warning="weapon not restored after alching",
+            weapon=weapon,
+            casts=cast,
+        )
     return cast
 
 
@@ -612,7 +632,17 @@ def main(argv):
 
         # Food is the budget. Out of food is out of hunt, not a reason to
         # keep swinging and find out what happens.
-        if not [i for i in d.get("inventory") or [] if i["name"] == a.food]:
+        # Match the named food first, then anything else edible. Stopping with
+        # a pack full of lobster because --food said Salmon is a silly way to
+        # end a run, and it happened.
+        edible = [i for i in d.get("inventory") or [] if i["name"] == a.food] or [
+            i
+            for i in d.get("inventory") or []
+            if any(
+                (o.get("text") or "") == "Eat" for o in i.get("optionsWithIndex") or []
+            )
+        ]
+        if not edible:
             emit(hunt="stopped", reason="out of food", round=r)
             break
         if eat(a.character, d, a.min_hp, a.food):
