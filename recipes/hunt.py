@@ -186,6 +186,11 @@ def sweep(character, takes, limit=6):
     return took
 
 
+def last_game_message(d):
+    msgs = d.get("gameMessages") or []
+    return msgs[-1].get("text") if msgs else "no message"
+
+
 def rewield_ammo(character, d):
     """Put recovered arrows back in the quiver.
 
@@ -201,7 +206,7 @@ def rewield_ammo(character, d):
         for e in (d.get("equipment") or [])
     )
     if equipped:
-        return False
+        return True
     for i in d.get("inventory") or []:
         name = (i.get("name") or "").lower()
         if not (name.endswith("arrow") or name.endswith("bolts")):
@@ -222,7 +227,12 @@ def rewield_ammo(character, d):
             json.dumps({"slot": i["slot"], "optionIndex": idx}),
         )
         walk.cli(character, "wait", "3")
-        return True
+        # Verify rather than trust the dispatch: a wrong optionIndex answers
+        # success and leaves the arrows exactly where they were.
+        return any(
+            (e.get("name") or "").lower().endswith(("arrow", "arrows", "bolt", "bolts"))
+            for e in ((walk.state(character) or {}).get("equipment") or [])
+        )
     return False
 
 
@@ -315,6 +325,12 @@ def main(argv):
     d = state(a.character)
     if not d:
         raise SystemExit(json.dumps({"error": "no state"}))
+    # Whether ammunition matters at all. A scimitar has no arrows and never
+    # will, so the out-of-ammo stop below must not fire for a melee camp.
+    ranged_camp = any(
+        (e.get("name") or "").lower().endswith(("arrow", "arrows", "bolt", "bolts"))
+        for e in (d.get("equipment") or [])
+    )
     start = counts(d)
     t0 = time.time()
     kills = 0
@@ -418,9 +434,21 @@ def main(argv):
                     continue
             target = n
             break
-        if rewield_ammo(a.character, d):
-            emit(round=r, note="re-wielded recovered ammunition")
-            d = state(a.character) or d
+        if ranged_camp and not rewield_ammo(a.character, d):
+            # No ammunition equipped and none in the pack. Every further attack
+            # will answer success and fire nothing, which is the same silent
+            # stop the quiver bug produced, one level up: there the arrows were
+            # in the inventory, here there are none at all. Stop and say so
+            # rather than grinding rounds into an empty bow.
+            emit(
+                done=True,
+                reason="out of ammunition",
+                rounds=r,
+                engaged=kills,
+                message=last_game_message(state(a.character) or {}),
+            )
+            break
+        d = state(a.character) or d
 
         if target is None:
             # Nothing alive in range, so this is the safe window: collect the
