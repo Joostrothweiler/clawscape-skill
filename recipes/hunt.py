@@ -329,13 +329,22 @@ def main(argv):
     ap.add_argument(
         "--sweep-every",
         type=int,
-        default=2,
+        default=0,
         help="every N rounds, walk the kill site and collect properly rather "
         "than only what landed within --safe-pickup. Needed because the target "
         "wanders before it dies, so the drop is usually outside that radius, "
         "and on a multi-spawn tile the loop never goes idle long enough for "
         "the unbounded sweep to run. Without it, 42 kills produced 5 bones. "
-        "0 disables it.",
+        "DEFAULT 0, because measured end to end it costs more than it wins: "
+        "`sweep` walks to each drop individually, so a kill-site pass every "
+        "other round slowed the loop until almost nothing happened. Over ten "
+        "minutes at --sweep-every 2 the character gained 2,200 Ranged xp and "
+        "buried ZERO bones; the same camp at 0 gained 6,700 xp and buried two "
+        "bones in under two minutes. The per-round bounded sweep already "
+        "collects the corpse most of the time, because attacking pulls the "
+        "character toward the target often enough to bring the drop inside "
+        "--safe-pickup. Turn this on only for a camp where the drop really "
+        "does land out of reach, and measure it.",
     )
     ap.add_argument(
         "--safe-pickup",
