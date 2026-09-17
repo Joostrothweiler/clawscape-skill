@@ -144,8 +144,18 @@ def eat(character, d, min_hp, food):
     return True
 
 
-def sweep(character, takes, limit=6):
-    """Pick up nearby drops we care about. Returns how many were taken."""
+def sweep(character, takes, limit=6, within=None, origin=None):
+    """Pick up nearby drops we care about. Returns how many were taken.
+
+    `within` and `origin` bound how far the sweep will wander. A safespotting
+    camp must not chase a drop into the leash zone every round, but it also
+    must not leave everything lying there: moving the sweep to the idle branch
+    alone meant that on a tile covering three spawns, where there are almost no
+    idle rounds, **ten kills in a row were collected from not at all** while
+    big bones and coins sat on the character's own tile. So the round-by-round
+    sweep is bounded to what is safe to reach from the safespot, and the
+    unbounded one still runs while waiting for a respawn.
+    """
     walk.cli(character, "act", "scanGroundItems")
     walk.cli(character, "wait", "1")
     d = state(character)
@@ -156,6 +166,15 @@ def sweep(character, takes, limit=6):
         name = item.get("name")
         if not wanted(name, takes):
             continue
+        if within is not None and origin is not None:
+            if (
+                max(
+                    abs(item.get("x", 0) - origin[0]),
+                    abs(item.get("z", 0) - origin[1]),
+                )
+                > within
+            ):
+                continue
         # Walk to it first. Drops land at the TARGET's feet, not yours, and
         # `pickupItem` on something out of reach just answers "I can't reach
         # that!". Arrows especially: every shot is an arrow on the ground by
@@ -308,6 +327,15 @@ def main(argv):
         ),
     )
     ap.add_argument(
+        "--safe-pickup",
+        type=int,
+        default=3,
+        help="how far from the safespot the per-round sweep will step for a "
+        "drop. Kept small on purpose: the loot lands at the corpse, which is "
+        "inside the leash, and the point of the tile is not to go there. The "
+        "unbounded sweep still runs while waiting for a respawn.",
+    )
+    ap.add_argument(
         "--kite",
         type=int,
         default=0,
@@ -327,10 +355,22 @@ def main(argv):
         raise SystemExit(json.dumps({"error": "no state"}))
     # Whether ammunition matters at all. A scimitar has no arrows and never
     # will, so the out-of-ammo stop below must not fire for a melee camp.
-    ranged_camp = any(
-        (e.get("name") or "").lower().endswith(("arrow", "arrows", "bolt", "bolts"))
-        for e in (d.get("equipment") or [])
+    #
+    # Read the WEAPON, not the quiver. The first version of this checked
+    # whether ammunition was equipped at start, and a run that began with an
+    # empty quiver and 56 arrows in the pack therefore decided it was a melee
+    # camp: rewield_ammo never ran, the out-of-ammo stop was gated off the same
+    # flag, and the loop fired nothing for five minutes while reporting nothing
+    # wrong. The guard against the silent stop produced the silent stop.
+    weapon = next(
+        (
+            (e.get("name") or "").lower()
+            for e in (d.get("equipment") or [])
+            if e.get("slot") == 3
+        ),
+        "",
     )
+    ranged_camp = any(w in weapon for w in ("bow", "crossbow", "sling", "dart"))
     start = counts(d)
     t0 = time.time()
     kills = 0
@@ -498,6 +538,11 @@ def main(argv):
         # 9-tile return needs more than one and `wait 4` does not finish the
         # first. Loop until the tile is under her.
         hold_safespot(a.character, safespot, tries=6)
+        # Collect what landed inside the safe radius every round. Without this
+        # a three-spawn tile never sweeps at all, because it never goes idle.
+        if safespot:
+            taken += sweep(a.character, takes, within=a.safe_pickup, origin=safespot)
+            hold_safespot(a.character, safespot, tries=3)
         buried += bury_bones(a.character, state(a.character) or {})
         atlas.observe(state(a.character))
 
