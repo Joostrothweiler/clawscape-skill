@@ -186,6 +186,29 @@ def sweep(character, takes, limit=6):
     return took
 
 
+def hold_safespot(character, safespot, tries=6):
+    """Put the character back on its tile, and confirm it rather than assume.
+
+    A single `walkTo` moves 7 to 8 tiles, so any return longer than that needs
+    more than one call, and the settled read is what proves it happened.
+    """
+    if not safespot:
+        return True
+    for _ in range(tries):
+        at_now, _ = walk.settled(character)
+        if tuple(at_now) == safespot:
+            return True
+        walk.cli(
+            character,
+            "act",
+            "walkTo",
+            "--json",
+            json.dumps({"x": safespot[0], "z": safespot[1], "running": True}),
+        )
+        walk.cli(character, "wait", "6")
+    return tuple(walk.settled(character)[0]) == safespot
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--character", required=True)
@@ -349,23 +372,11 @@ def main(argv):
             target = n
             break
         if target is None:
+            # Nothing alive in range, so this is the safe window: collect the
+            # drops now, then get back on the tile before the respawn.
             taken += sweep(a.character, takes)
-            # sweep() walks to the drop, so this branch leaks the tile too.
-            if safespot:
-                for _ in range(4):
-                    at_now, _ = walk.settled(a.character)
-                    if tuple(at_now) == safespot:
-                        break
-                    walk.cli(
-                        a.character,
-                        "act",
-                        "walkTo",
-                        "--json",
-                        json.dumps(
-                            {"x": safespot[0], "z": safespot[1], "running": True}
-                        ),
-                    )
-                    walk.cli(a.character, "wait", "6")
+            buried += bury_bones(a.character, state(a.character) or {})
+            hold_safespot(a.character, safespot, tries=4)
             emit(round=r, note="no target in range", taken=taken)
             walk.cli(a.character, "wait", "5")
             continue
@@ -396,31 +407,19 @@ def main(argv):
         # every attack. Against a leashed monster, stepping back outside its
         # `maxrange` breaks contact for good rather than merely postponing it.
         kills += 1
-        taken += sweep(a.character, takes)
-        buried += bury_bones(a.character, state(a.character) or {})
-        # The re-assert has to be the LAST thing in the round. It used to run
-        # before the loot sweep, and `sweep` and `bury_bones` both walk the
-        # character to the drop, so every round ended standing on the corpse
-        # pile inside the giant's reach instead of on the safespot. Measured at
-        # the Ardougne camp: the character drifted 9 tiles off her tile and
-        # took 15 damage over a run that should have taken none.
+        # Return to the tile BEFORE looting, not after. The character is only
+        # in danger while she is off the safespot, and loot is not urgent:
+        # drops persist, damage does not. Sweeping first meant spending the
+        # whole looting window standing on the corpse pile next to a live
+        # giant, which is where the damage was actually coming from. The
+        # sweeping happens below, in the round that finds no target, because a
+        # respawn wait is exactly when nothing can hit her.
         #
-        # One walkTo is also not enough. A call moves 7 to 8 tiles, so a 9-tile
-        # return needs more than one, and `wait 4` does not even finish the
-        # first. Loop until the tile is actually under her.
-        if safespot:
-            for _ in range(6):
-                at_now, _ = walk.settled(a.character)
-                if tuple(at_now) == safespot:
-                    break
-                walk.cli(
-                    a.character,
-                    "act",
-                    "walkTo",
-                    "--json",
-                    json.dumps({"x": safespot[0], "z": safespot[1], "running": True}),
-                )
-                walk.cli(a.character, "wait", "6")
+        # One walkTo is not enough either. A call moves 7 to 8 tiles, so a
+        # 9-tile return needs more than one and `wait 4` does not finish the
+        # first. Loop until the tile is under her.
+        hold_safespot(a.character, safespot, tries=6)
+        buried += bury_bones(a.character, state(a.character) or {})
         atlas.observe(state(a.character))
 
         if r % a.report_every == 0:
