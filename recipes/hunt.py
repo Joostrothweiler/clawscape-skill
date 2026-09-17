@@ -161,12 +161,53 @@ def sweep(character, takes, limit=6, within=None, origin=None):
     d = state(character)
     if not d:
         return 0
+    # Rank before truncating. `scanGroundItems` returns whatever order it
+    # likes and `limit` throws away the tail, so a scatter of arrows could
+    # crowd out the drop that was worth the walk. Arrows first because they are
+    # the ammunition and the hunt stops without them, then bones because they
+    # are the Prayer, then the rest by value. Ties break on distance so the
+    # cheap nearby pickups still happen on the way.
+    AMMO = ("arrow", "bolt", "dart")
+    BONES = ("bones",)
+    VALUABLE = (
+        "rune",
+        "coins",
+        "shield",
+        "spear",
+        "sword",
+        "helm",
+        "platebody",
+        "platelegs",
+        "bar",
+        "staff",
+        "gem",
+        "emerald",
+        "sapphire",
+        "ruby",
+        "diamond",
+    )
+
+    def rank(it):
+        n = (it.get("name") or "").lower()
+        if any(k in n for k in AMMO):
+            tier = 0
+        elif any(k in n for k in BONES):
+            tier = 1
+        elif any(k in n for k in VALUABLE):
+            tier = 2
+        else:
+            tier = 3
+        return (tier, it.get("distance", 99))
+
     took = 0
-    for item in (d.get("groundItems") or [])[:limit]:
+    seen = [(i.get("name"), i.get("distance")) for i in (d.get("groundItems") or [])]
+    skipped = []
+    for item in sorted(d.get("groundItems") or [], key=rank)[:limit]:
         name = item.get("name")
         if not wanted(name, takes):
+            skipped.append((name, "not wanted"))
             continue
-        if within is not None and origin is not None:
+        if within is not None and origin is not None and rank(item)[0] >= 3:
             if (
                 max(
                     abs(item.get("x", 0) - origin[0]),
@@ -202,6 +243,10 @@ def sweep(character, takes, limit=6, within=None, origin=None):
         )
         walk.cli(character, "wait", "2")
         took += 1
+    # Only worth saying when it went wrong: something on the ground that was
+    # wanted and still not taken. A quiet sweep needs no commentary.
+    if skipped or (seen and not took):
+        emit(sweep_saw=len(seen), sweep_took=took, sweep_skipped=skipped[:6])
     return took
 
 
@@ -253,6 +298,92 @@ def rewield_ammo(character, d):
             for e in ((walk.state(character) or {}).get("equipment") or [])
         )
     return False
+
+
+ALCH_SKIP = (
+    "bones",
+    "arrow",
+    "bolt",
+    "dart",
+    "coins",
+    "nature rune",
+    "salmon",
+    "lobster",
+    "trout",
+)
+
+
+def alch_valuables(character, keep_runes=10, spell=1178):
+    """Turn the drops into Magic xp and coins instead of carrying them home.
+
+    High alch pays 1,625 Magic xp and 0.6x the item's value, and the xp does
+    not depend on the item, so a camp that drops alchables is a Magic engine
+    that happens to also be a Ranged one. The nature rune is the only real
+    consumable; a staff of fire supplies the fire runes.
+
+    The staff has to be WIELDED, which means putting the bow down, so this is
+    batched rather than done per drop. Everything is swapped back afterwards.
+    """
+    d = walk.state(character) or {}
+    runes = sum(
+        i.get("amount") or i.get("count") or 0
+        for i in (d.get("inventory") or [])
+        if i["name"] == "Nature rune"
+    )
+    targets = [
+        i
+        for i in (d.get("inventory") or [])
+        if not any(k in (i["name"] or "").lower() for k in ALCH_SKIP)
+        and i["name"] not in ("Staff of fire", "Oak longbow", "Lobster pot")
+    ]
+    if runes <= keep_runes or not targets:
+        return 0
+
+    def wield(name):
+        for i in (walk.state(character) or {}).get("inventory") or []:
+            if i["name"] == name:
+                idx = next(
+                    (
+                        o.get("opIndex")
+                        for o in (i.get("optionsWithIndex") or [])
+                        if o.get("text") in ("Wield", "Wear")
+                    ),
+                    2,
+                )
+                walk.cli(
+                    character,
+                    "act",
+                    "useInventoryItem",
+                    "--json",
+                    json.dumps({"slot": i["slot"], "optionIndex": idx}),
+                )
+                walk.cli(character, "wait", "3")
+                return True
+        return False
+
+    if not wield("Staff of fire"):
+        return 0
+    cast = 0
+    for item in targets:
+        d = walk.state(character) or {}
+        row = next(
+            (i for i in d.get("inventory") or [] if i["name"] == item["name"]), None
+        )
+        if row is None:
+            continue
+        before = len(d.get("inventory") or [])
+        walk.cli(
+            character,
+            "act",
+            "spellOnItem",
+            "--json",
+            json.dumps({"slot": row["slot"], "spellComponent": spell}),
+        )
+        walk.cli(character, "wait", "4")
+        if len((walk.state(character) or {}).get("inventory") or []) < before:
+            cast += 1
+    wield("Oak longbow")
+    return cast
 
 
 def hold_safespot(character, safespot, tries=6):
@@ -347,6 +478,28 @@ def main(argv):
         "does land out of reach, and measure it.",
     )
     ap.add_argument(
+        "--loot-every",
+        type=int,
+        default=6,
+        help="sweep for loot every N rounds. A round is one ATTACK, not one "
+        "kill, and a moss giant takes about a dozen, so 1 means breaking off "
+        "after every shot to fetch the arrow just fired.",
+    )
+    ap.add_argument(
+        "--alch-every",
+        type=int,
+        default=40,
+        help="every N rounds, high-alch the valuables carried. Turns the "
+        "camp's drops into Magic xp and coins rather than a bank trip. "
+        "0 disables it.",
+    )
+    ap.add_argument(
+        "--alch-keep",
+        type=int,
+        default=10,
+        help="never alch below this many nature runes",
+    )
+    ap.add_argument(
         "--safe-pickup",
         type=int,
         default=3,
@@ -394,6 +547,7 @@ def main(argv):
     start = counts(d)
     t0 = time.time()
     killed = 0
+    alched = 0
     kills = 0
     taken = 0
     buried = 0
@@ -547,73 +701,51 @@ def main(argv):
         # every attack. Against a leashed monster, stepping back outside its
         # `maxrange` breaks contact for good rather than merely postponing it.
         kills += 1
-        # Did the thing we attacked actually die? A "round" is one interactNpc
-        # plus a wait, NOT one kill: a moss giant takes about a dozen attacks.
-        # Everything below walks the character around to collect loot, and
-        # doing that after every ATTACK means wandering off mid-fight to pick
-        # up the arrow that was just fired. Mike spotted it from the live view.
-        # Only loot once the target is gone.
-        d_after = state(a.character) or {}
-        still_alive = any(
-            n.get("index") == target.get("index")
-            and (n.get("hp") is None or n.get("hp", 1) > 0)
-            for n in (d_after.get("nearbyNpcs") or [])
-        )
-        if still_alive:
-            # Stay put and keep shooting. The tile is only re-asserted if the
-            # attack dragged her off it, which is rare with a clear line.
+
+        # ORDER MATTERS, and getting it wrong has cost something every time.
+        #
+        # 1. Get back on the tile. ALWAYS, every round, before anything else.
+        #    This used to sit behind a `continue` that skipped it on non-loot
+        #    rounds, so across a twelve-attack fight the character drifted into
+        #    melee and was still being hit while the loop reported nothing
+        #    wrong.
+        # 2. Loot on a CADENCE, not every round and not on a detected kill. A
+        #    round is one attack and a giant takes about a dozen, so looting
+        #    every round means breaking off after each shot to fetch the arrow
+        #    just fired. Detecting the kill instead sounds right and is
+        #    fragile: the loop re-acquires a target every round, so "is the
+        #    thing I attacked still alive" answered yes forever in one version
+        #    and almost never in the next. A counter cannot be wrong about
+        #    itself.
+        if safespot:
             at_now, _ = walk.settled(a.character)
-            if safespot and tuple(at_now) != safespot:
-                hold_safespot(a.character, safespot, tries=3)
+            if tuple(at_now) != safespot:
+                hold_safespot(a.character, safespot, tries=4)
+
+        if r % a.loot_every:
             continue
         killed += 1
-        # Return to the tile BEFORE looting, not after. The character is only
-        # in danger while she is off the safespot, and loot is not urgent:
-        # drops persist, damage does not. Sweeping first meant spending the
-        # whole looting window standing on the corpse pile next to a live
-        # giant, which is where the damage was actually coming from. The
-        # sweeping happens below, in the round that finds no target, because a
-        # respawn wait is exactly when nothing can hit her.
-        #
-        # One walkTo is not enough either. A call moves 7 to 8 tiles, so a
-        # 9-tile return needs more than one and `wait 4` does not finish the
-        # first. Loop until the tile is under her.
-        # On a sweep round, collect AT THE CORPSE, before going home. The
-        # bounded sweep below cannot reach a drop 8 to 13 tiles out, because
-        # the target wanders up to `wanderrange` from its spawn before dying
-        # and `scanGroundItems` is centred on the character. The cost of not
-        # doing this was measured: **42 kills for 5 bones buried**, against a
-        # guaranteed `death_drop,big_bones` on every moss giant. A missing bone
-        # is a collection failure, never a drop that did not happen.
-        #
-        # This is the round's one moment of deliberate exposure, which is why
-        # it is every Nth round: the giant that dropped the loot is dead, and
-        # the walk home follows immediately.
-        if a.sweep_every and r % a.sweep_every == 0:
-            taken += sweep(a.character, takes, limit=12)
-            buried += bury_bones(a.character, state(a.character) or {})
-        hold_safespot(a.character, safespot, tries=6)
-        # Collect what landed inside the pickup radius every round. Without
-        # this a three-spawn tile never sweeps at all, because it never goes
-        # idle.
-        #
-        # This used to sit inside `if safespot:`, which meant a hunt WITHOUT a
-        # safespot never swept after a kill at all -- only the "no target"
-        # branch did. Measured: five kills at close range left a Big bones one
-        # tile away and `picked_up` at zero. Melee and kited hunts are exactly
-        # the ones whose drops land underfoot, so they were the worst served.
-        # The radius is measured from the safespot when there is one, and from
-        # the character when there is not.
-        here = safespot
-        if here is None:
-            d_now = state(a.character) or {}
-            pl = d_now.get("player") or {}
+
+        # Arrows first (they are the ammunition and they are free to carry),
+        # then bones (Prayer), then the rest by value. `sweep` ranks them.
+        origin = safespot
+        if origin is None:
+            pl = (state(a.character) or {}).get("player") or {}
             if pl.get("worldX") is not None:
-                here = (pl["worldX"], pl["worldZ"])
-        taken += sweep(a.character, takes, within=a.safe_pickup, origin=here)
-        hold_safespot(a.character, safespot, tries=3)
+                origin = (pl["worldX"], pl["worldZ"])
+        taken += sweep(
+            a.character, takes, limit=10, within=a.safe_pickup, origin=origin
+        )
         buried += bury_bones(a.character, state(a.character) or {})
+        if safespot:
+            hold_safespot(a.character, safespot, tries=4)
         atlas.observe(state(a.character))
+
+        # Turn the valuables into Magic xp and coins rather than carrying them
+        # home. Batched, because each batch swaps the bow out for the staff and
+        # back, and that is only worth doing occasionally.
+        if a.alch_every and r % a.alch_every == 0:
+            alched += alch_valuables(a.character, a.alch_keep)
 
         if r % a.report_every == 0:
             d = state(a.character) or d
