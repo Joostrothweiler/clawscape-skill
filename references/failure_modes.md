@@ -31,6 +31,38 @@ from the nearest guard. Dispatch means "the server accepted the request", never
 **Guard:** compare the skill's experience before and after every round. Two flat
 rounds means reposition, not continue. See `thieving.md`.
 
+### Zero movement to a far goal while SHORT hops work is a pocket
+
+The most expensive signature in this project so far, because it looks like
+every other one and is none of them.
+
+**The test:** repeat `walkTo` at the distant goal and watch the position. If it
+does not move **at all** across many calls, while 2-to-4 tile steps in several
+directions still succeed, the terrain is fine and the connection is fine. The
+server's own pathfinder is telling you **there is no route from where you
+stand** -- you are inside something.
+
+Measured on 2026-09-17: 25 consecutive `walkTo` calls at a goal 124 tiles away
+moved the character **zero tiles**, while a six-direction probe from the same
+tile moved freely in four of them.
+
+**The cause is almost always a gate you opened yourself.** Gates close behind
+you. Walking through one to make progress puts you inside the enclosure it
+guards, and from in there every destination outside is unroutable. The fix is
+to go back through it, not to plan a better route: after re-opening the gate at
+(2675,3349), a **single** `walkTo` covered the remaining 41 tiles.
+
+**What this defeats, so you do not repeat it:** offline BFS (it does not know
+the gate shut), `route.py` (correctly reports "no recorded hop connects these",
+which is true and beside the point), `maze.py` (happily maps the inside of the
+pocket -- 1,307 tiles of it), and an eight-direction sweep, which proves the
+**tile** is open and never that the **route** is. All four were run first, and
+all four were wasted.
+
+**Guard:** before any routing work, ask what the character last walked
+**through**. `state` the nearby locs for a Gate or Door with an `Open` option
+still on it; that is the one that shut.
+
 ### A dropped session looks exactly like terrain
 
 Imaginary walls were mapped around Falador this way, and a whole scripted
