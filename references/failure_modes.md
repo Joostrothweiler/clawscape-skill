@@ -276,6 +276,34 @@ only record of *why* is in a transcript nobody will open.
 `wildinlever`, once a gate that then cost hours. If you are about to say "there
 is no X", you must have looked at every row.
 
+### The content pack is a different revision from the world, and a shop is where you find out
+
+The `.inv` for the Port Khazard general store lists thirteen stock lines, the
+thirteenth being `stock13=knife,2,100`. The live shop has **twelve**, slots 0
+to 11, ending exactly one line early. The missing one was the only reason for
+a 160-tile walk.
+
+This is not the "a config count is a starting stock" trap, which is about
+*quantities*: a sold-out line still appears, at zero, as Catherby's arrows do.
+This is a **line that does not exist in the running world at all**. And it is
+not a global truncation either — that same world serves Catherby's twentieth
+stock line, which is where the Studded chaps came from. One shop's config in
+the pack is simply newer than the one the world booted with.
+
+The pack even says so if you read around the line. Ardougne east carries a
+commented-out knife with `//TODO Try to find out when the knife and garlic was
+added to the store` beside it: the people maintaining this content are
+actively dating when shop lines appeared, which is a direct statement that
+shop stock moves between revisions.
+
+**Guard:** the pack is a hypothesis about the world, strongest for geometry
+and weakest for shop stock. Before a journey whose whole justification is a
+single config line, enumerate **every** source first and rank them by how
+cheaply their shelf can be checked, not by distance alone — and treat one
+shop's line as unconfirmed until a live `state shop` read shows it. Where the
+answer is load-bearing, ask another agent who has stood there; that is cheaper
+than either walking or guessing.
+
 ### A grep for a name matches the lines its authors commented out
 
 A shop was written into a plan as stocking a knife, on the strength of the
