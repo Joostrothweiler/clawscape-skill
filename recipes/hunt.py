@@ -430,6 +430,12 @@ def alch_valuables(character, keep_runes=10, spell=1178):
                 return True
         return False
 
+    # Remember what was ACTUALLY in the weapon slot, because that is what has
+    # to come back. See the restore below for why a name list will not do.
+    worn_before = next(
+        (e.get("name") for e in (d.get("equipment") or []) if e.get("slot") == 3),
+        None,
+    )
     if not wield("Staff of fire"):
         return 0
     cast = 0
@@ -451,13 +457,20 @@ def alch_valuables(character, keep_runes=10, spell=1178):
         walk.cli(character, "wait", "4")
         if len((walk.state(character) or {}).get("inventory") or []) < before:
             cast += 1
-    # Put the weapon back, and CHECK. If this silently fails the character is
-    # left holding a staff with no bow, every subsequent attack does nothing,
-    # and the loop reports a clean run while the xp sits still. That happened:
-    # the staff stayed equipped and the hunt quietly stopped landing hits.
-    for name in ("Oak longbow", "Longbow", "Shortbow"):
-        if wield(name):
-            break
+    # Put back the weapon that was there, and CHECK. If this silently fails the
+    # character is left holding a staff with no bow, every attack does nothing,
+    # and the loop reports a clean run while the xp sits still. That happened.
+    #
+    # This used to try a hardcoded list, ("Oak longbow", "Longbow", "Shortbow"),
+    # which is a name doing the job of an identity and fails the moment the
+    # character owns two bows. On 2026-09-18 an upgrade to a Willow longbow was
+    # undone on the first alch: the Oak was still in the pack as a spare, so it
+    # matched first and was wielded, silently downgrading the weapon BELOW the
+    # mithril arrows in the quiver. Every attack afterwards answered "Your bow
+    # isn't powerful enough for those arrows" and did nothing. The old check
+    # passed it, because an Oak longbow is not a staff.
+    if worn_before and not wield(worn_before):
+        emit(alch_warning="could not re-wield", weapon=worn_before)
     weapon = next(
         (
             e.get("name")
@@ -466,9 +479,13 @@ def alch_valuables(character, keep_runes=10, spell=1178):
         ),
         None,
     )
-    if weapon is None or "staff" in (weapon or "").lower():
+    # Compare against what was worn, not against a guess at what a weapon
+    # looks like. Anything else in the slot is a downgrade or a staff, and
+    # both are silent failures.
+    if worn_before and weapon != worn_before:
         emit(
             alch_warning="weapon not restored after alching",
+            wanted=worn_before,
             weapon=weapon,
             casts=cast,
         )
