@@ -83,6 +83,24 @@ with them.
 stop tuning and ask what the loop's round actually is. The fix is upstream of
 the parameters.
 
+### A shop leaves you indoors, and the next leg is refused with no message
+
+`shop.py` walks to the shopkeeper, and shopkeepers stand **inside buildings**.
+So the moment a purchase succeeds, the character is in a one-door room, and
+the next travel leg — a perfectly ordinary 8-tile hop — is refused with zero
+movement and no message, which reads exactly like a wall.
+
+It is the pocket signature below, with a known cause and a trivial fix. At
+Aemad's in Ardougne the only exit is one tile north, and the `Door` was
+already open: `state locs` listed it at distance 1 with the option **`Close`**,
+which is how an open door advertises itself.
+
+**Guard:** after any shop, make the first leg a short step **out of the
+building** before aiming at the real destination. If a leg is refused right
+after shopping, read `state locs` for a `Door` within a tile or two — option
+`Close` means open, `Open` means shut — and leave through it rather than
+concluding anything about the terrain.
+
 ### Zero movement to a far goal while SHORT hops work is a pocket
 
 The most expensive signature in this project so far, because it looks like
