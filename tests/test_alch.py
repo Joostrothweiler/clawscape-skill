@@ -19,6 +19,10 @@ sys.path.insert(
 
 import alch  # noqa: E402
 
+RECIPES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "recipes"
+)
+
 # A real state read. The staff's only option is Wield, at opIndex 2, sitting at
 # position 0 of the list. Sending the position plus one sends 1, and nothing
 # happens.
@@ -137,3 +141,26 @@ class HuntAmmo(unittest.TestCase):
         self.hunt.walk = FakeWalk([{"equipment": [{"name": "Oak longbow"}]}])
         d = {"equipment": [{"name": "Oak longbow"}], "inventory": []}
         self.assertFalse(self.hunt.rewield_ammo("arete", d))
+
+
+class RestoreTheWeaponThatWasWorn(unittest.TestCase):
+    """The alch swap must put back the exact weapon, not a name that matches.
+
+    A hardcoded list of bow names is a name doing the job of an identity. It
+    fails the moment a character owns two bows: on 2026-09-18 an upgrade to a
+    Willow longbow was undone on the first alch because the Oak was still in
+    the pack and matched first, silently downgrading the weapon below the
+    arrows in the quiver.
+    """
+
+    def test_source_remembers_the_worn_weapon(self):
+        src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
+        self.assertIn("worn_before", src)
+
+    def test_source_no_longer_hardcodes_bow_names(self):
+        src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
+        self.assertNotIn('for name in ("Oak longbow"', src)
+
+    def test_source_compares_against_what_was_worn(self):
+        src = open(os.path.join(RECIPES_DIR, "hunt.py")).read()
+        self.assertIn("weapon != worn_before", src)
