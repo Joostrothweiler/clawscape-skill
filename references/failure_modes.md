@@ -258,6 +258,23 @@ only record of *why* is in a transcript nobody will open.
 `wildinlever`, once a gate that then cost hours. If you are about to say "there
 is no X", you must have looked at every row.
 
+### A grep for a name matches the lines its authors commented out
+
+A shop was written into a plan as stocking a knife, on the strength of the
+word appearing in its `.inv` file. The line was `//stock2=knife,1,2` —
+disabled, with a `TODO` beside it asking when the knife had been added. The
+shop has never sold one.
+
+Content files are version-controlled by people, so they carry the things those
+people decided **not** to ship: commented stock lines, half-finished spawns,
+alternatives that lost. A name search finds all of it and reports it exactly
+like live content.
+
+**Guard:** match the syntax, not the word. `grep '^stock[0-9]*=knife'`, not
+`grep knife`. The same applies to spawns and shop prices — and where the
+answer decides a trip of any length, check the shelf live, because a config
+count is a starting stock and not what is on it now.
+
 ### A negative is a hypothesis until tested
 
 A private note claimed Ardougne was members-only. Nobody had tested it, an
