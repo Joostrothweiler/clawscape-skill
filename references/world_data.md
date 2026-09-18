@@ -154,3 +154,41 @@ three, so pick the pocket you can stand in rather than the best table:
 | Unarmed zombie | 1/128 | 6 | 0.047 |
 | Skeleton | 1/128 | 3 | 0.023 |
 | Guard | 1/128 | 1 | 0.008 |
+
+## Dargaud's Bow and Arrows, and a claim it overturns
+
+The Ranging Guild's arrow shop at **(2673,3433)** — `ranging_guild_bow_salesman`,
+npc 683, inside the guild door `loc_2514` at **(2658,3438)** — stocks, read
+live on 2026-09-18:
+
+| Line | Stock | Listed price |
+| --- | --- | --- |
+| **Arrow shaft** | 1,000 | **1** |
+| Bronze / Iron / Steel arrowtips | 500 / 400 / 300 | 1 / 2 / 6 |
+| Mithril / Adamant / Rune arrowtips | 200 / 200 / 150 | 16 / 40 / 200 |
+| Bronze / Iron / Steel arrow | 1,000 / 500 / 500 | 1 / 3 / 12 |
+| **Mithril / Adamant / Rune arrow** | **500 / 450 / 400** | 32 / 80 / 400 |
+| Shortbows and longbows to willow | 20 each | 50 to 320 |
+
+**This repo has recorded that "every arrow above iron exists only as an
+arrowhead, so better ammunition is a Fletching project, not a purchase, at any
+shop in the world."** That was generalised from Catherby's archery shop, where
+the finished-arrow lines really do sit at zero. It is wrong. Finished arrows
+to **rune** are on this shelf, and so are arrow shafts, which means the
+shaft→headless→arrow chain can run without ever owning a knife.
+
+Two lessons, and the second is the one worth carrying:
+
+- **A shop's stock list is a fact about that shop.** Two archery shops a few
+  hundred tiles apart carry different lines, and reasoning from one to "any
+  shop in the world" turned a local observation into a world model that sent
+  a character on a 160-tile walk for a knife it did not need.
+- **The listed price is a floor and it climbs steeply.** 130 mithril arrows
+  cost 6,762 coins against a 32 gp listing — an effective **52 gp each**.
+  Budget from the coin delta, buy in batches, and stop when the effective
+  price stops being worth it.
+
+Entry is `stat(ranged) < 40` at the door, and the door only admits from the
+**west or north**: `ranging_guild_door.rs2` sends anyone standing east of it
+or south of it straight back out. It is also **nameless in the loc data**
+(`loc_2514`), so searching for "door" or "gate" in the band finds nothing.
