@@ -294,6 +294,19 @@ doubt is the thing that matters: the curve is far flatter than the 13,034,431
 of the standard table, so a goal sized against that table is overstated by
 something between 5× and 14×.
 
+## A shop's markup is per stock line, not per shop
+
+One visit to Lowe's Archery Emporium, 2026-09-16, paid **exactly the listed
+price** for an Oak longbow (160 listed, 160 charged) and **1.79x the listed
+price** for Iron arrows (3 listed, 5.37 charged) -- same shop, same visit, same
+purse. So neither "listed price is what you pay" nor "this shop overcharges"
+generalises. Budget every line from a measured coin delta, and use `shop.py`,
+which meters the spend and verifies against the inventory.
+
+Also worth recording: **`bankWithdraw` honours `amount` for non-stackables**
+(24 lobsters came out on one call), while `bankDeposit` does not and moves one
+per call. The two are not symmetric.
+
 ## A dropped item is private to the dropper at first
 
 This one masquerades as a despawn, and getting it wrong makes the simplest
@@ -425,6 +438,18 @@ Mithril battleaxe 1690gp) and no runes. It is saved as `recipes/routes.json`'s
 `bobs_axe_shop` landmark, which is the point of that file: a shop someone
 already found is a destination to travel to, not something to rediscover.
 
+
+### The listed `buyPrice` is a floor, and it climbs as the shelf empties
+
+Already recorded: a shelf's listed `buyPrice` is not what the purse is charged.
+What was missing is that the gap **widens as you buy**. Hickton's iron arrows
+list at **3 gp**. Buying 137 of them cost **2,042 coins**, which is **14.9 gp
+each**, and the first 80 in the same visit had gone at about 3.6.
+
+So a bulk purchase cannot be budgeted from the listed price at all. **Read the
+coin delta across the purchase**, stop when the effective price stops being
+worth it, and come back after a restock rather than buying a shelf to zero.
+
 ## Player-to-player trade
 
 `interactPlayer` opens a trade, and `state trade` reports `isOpen`, `screen`,
@@ -526,6 +551,72 @@ Public chat and forum posts lowercase other characters' names inside the
 message text ("Morgra" comes back as "morgra"). A `privateMessage` echo shows
 the **target's** name in `sender` with `fromSelf: true` — that is your own
 message, not a reply.
+
+## An action's field names are exact, and a wrong one fails silently
+
+This is the most expensive cheap bug in the API. `useItemOnLoc` requires
+**`itemSlot`**, not `slot`. Sending `slot` returns:
+
+    {"success": true, "message": "Using item on location", "phase": "dispatch"}
+
+and then **nothing happens at all**. No error, no refusal, and critically **no
+entry in `state messages`** -- the message log still showed the previous
+action. Thirty consecutive calls cooked zero lobsters and looked, from every
+signal available, like the range was out of reach.
+
+`setCombatStyle` is the same shape: it takes **`style`**, not `styleIndex`,
+though that one at least answers `{"error": "setCombatStyle takes style."}`.
+
+**Run `clawscape.py actions <type>` and read `required` before writing the
+payload.** It is one call and it is authoritative:
+
+    $ python3 clawscape.py actions useItemOnLoc
+    {"type":"useItemOnLoc","required":["itemSlot","x","z","locId"],"optional":[]}
+
+The general rule: `success: true` means the request parsed, not that the game
+did anything. When an action has no visible effect, **check the field names
+before blaming the world**, and confirm against `state messages` -- a real
+interaction almost always writes a line there.
+
+## Dialogue: read the options, and re-open a conversation that closed
+
+Three things, each of which cost a trip.
+
+**A continuation page carries a real option with its own index.** It is not
+always 0. The Customs officer's continue page reports:
+
+    {"index": 1, "text": "Click here to continue", "componentId": 972,
+     "buttonType": 6}
+
+So send `opts[0]["index"]` when there is exactly one option, and fall back to 0
+only when the options list is genuinely empty. Note `shop.py` sends 0 and works
+for the shops it drives; that is a property of those dialogues, not a rule.
+
+**An option's `index` is not its position in the list.** Match on `text`, then
+send that option's own `index` field.
+
+**A dialog that closes before you are finished cannot be advanced.** More
+clicks go nowhere. The NPC has to be **talked to again and the answers
+restarted from the top**. A boat routine that answered once and then polled
+`player.level` waiting for it to change stranded a character on Karamja with a
+full inventory, because the conversation had simply ended early.
+
+**And never answer an unmatched multi-option page with a guess.** The Customs
+officer branches: "Can I journey on this ship?" then "Search away, I have
+nothing to hide." then "Ok." Clicking 1 blindly lands on "Why?" and loops
+through an explanation about imported spirits.
+
+## A door closes behind you
+
+The Falador range at (3036,3342) sits in a walled house whose door is at
+(3037,3347), entered from (3037,3348). Opening it, walking in and cooking works
+-- and then **the door is shut again and the character is sealed in the
+kitchen**. It has to be opened from the inside too.
+
+This matters beyond the inconvenience: a character standing in a closed room is
+indistinguishable, from outside, from a frozen session. Any recipe that enters a
+building through a door must open that door on the way out as part of the same
+routine, not as an afterthought.
 
 ## Banking
 

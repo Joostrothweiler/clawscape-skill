@@ -114,6 +114,53 @@ def sequences(routes: dict, bucket: str, reached_target: bool):
         yield [t for t in tiles if t]
 
 
+ATLAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "atlas.json")
+
+
+def add_atlas_tiles(graph: dict) -> int:
+    """Link adjacent tiles the atlas says a character has actually stood on.
+
+    This is the single richest record of proven ground in the project and this
+    planner did not read it. routes.json holds hops from journeys that were
+    explicitly recorded; the atlas holds **every tile any character has ever
+    stood on**, because walk.py and maze.py observe as a side effect of moving.
+
+    The gap is not small. Standing at (2638,3353) with 1033 walked tiles in the
+    atlas -- one of them one tile away, ninety of them near the destination --
+    route.py answered `off_the_map: no walked tile within 278`. It was right
+    about routes.json and wrong about the world.
+
+    Two tiles that have both been stood on and are orthogonally adjacent are a
+    step somebody has taken. That is exactly what "a proven road" means, and it
+    is what a valuable character should travel on instead of discovering new
+    ground -- discovery is a scout's job, and a scout is cheap to lose.
+    """
+    try:
+        tiles = json.load(open(ATLAS)).get("tiles") or {}
+    except Exception:
+        return 0
+    stood = set()
+    for key, rec in tiles.items():
+        if not isinstance(rec, dict) or not rec.get("walk"):
+            continue
+        try:
+            x, z = (int(v) for v in key.split(","))
+        except ValueError:
+            continue
+        stood.add((x, z))
+    added = 0
+    for x, z in stood:
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (x + dx, z + dz)
+            if n not in stood:
+                continue
+            for u, v in (((x, z), n), (n, (x, z))):
+                if v not in graph[u] or CONFIRMED_WEIGHT < graph[u][v]:
+                    graph[u][v] = CONFIRMED_WEIGHT
+                    added += 1
+    return added
+
+
 def build_graph(routes: dict) -> dict:
     """Tiles that have been stood on, linked by hops that have happened."""
     graph: dict = collections.defaultdict(dict)
@@ -137,7 +184,42 @@ def build_graph(routes: dict) -> dict:
                     # both sides. A one-way graph would refuse most return trips.
                     if v not in graph[u] or cost < graph[u][v]:
                         graph[u][v] = cost
+
+    add_atlas_tiles(graph)
+    add_crossings(routes, graph)
     return graph
+
+
+def add_crossings(routes: dict, graph: dict) -> int:
+    """Link the two sides of each recorded crossing, however far apart they are.
+
+    MAX_HOP exists to throw out phantom edges, and it is right to. But the real
+    crossings are genuinely long single moves: the Lumbridge/Varrock boundary is
+    one 27-tile walk from (3219,3333) to (3190,3363), and the Al Kharid toll
+    behaves like a teleport. Filtering those out removes the only edges joining
+    the southern world to Varrock, so a character can walk the crossing, record
+    the hop, arrive -- and the planner still answers `no_known_route`. Confirmed
+    live: that is exactly what happened.
+
+    A `crossings` entry is a deliberate statement that this move works, so it is
+    trusted regardless of span. The cost is the real distance, so a planner still
+    prefers ordinary walking when ordinary walking will do.
+    """
+    added = 0
+    for crossing in routes.get("crossings") or []:
+        if not isinstance(crossing, dict):
+            continue
+        here = as_point(crossing.get("from"))
+        there = as_point(crossing.get("beyond"))
+        if not here or not there:
+            continue
+        span = max(abs(here[0] - there[0]), abs(here[1] - there[1]))
+        cost = span * CONFIRMED_WEIGHT
+        for u, v in ((here, there), (there, here)):
+            if v not in graph[u] or cost < graph[u][v]:
+                graph[u][v] = cost
+                added += 1
+    return added
 
 
 def components(graph: dict) -> list:

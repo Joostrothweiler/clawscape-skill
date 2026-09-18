@@ -25,8 +25,8 @@ own name→id table.
 | --- | --- | --- | --- | --- |
 | Wind strike | **1152** | 1 | 1 Air + 1 Mind | Confirmed live: one cast, 137 Magic XP, exactly 1 of each rune consumed |
 | Confuse | 1153 | 3 | — | id only, untested |
-| Low level alchemy | **1162** | **21** | 1 Nature + 3 Fire | 310 XP, untested |
-| High level alchemy | **1178** | **55** | 1 Nature + 5 Fire | 650 XP, untested |
+| Low level alchemy | **1162** | **21** | 1 Nature + 3 Fire | **775 XP, confirmed live** |
+| High level alchemy | **1178** | **55** | 1 Nature + 5 Fire | **1625 XP, confirmed live** |
 
 `spellOnNpc` takes the target's `npcIndex` from `state npcs`, same as
 `interactNpc`. A cast at a target whose state row says `reachable: false`
