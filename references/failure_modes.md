@@ -31,6 +31,58 @@ from the nearest guard. Dispatch means "the server accepted the request", never
 **Guard:** compare the skill's experience before and after every round. Two flat
 rounds means reposition, not continue. See `thieving.md`.
 
+### A pickup is not a pickup until the inventory says so
+
+`pickupItem` on a drop you have not actually reached answers `success: true`
+and takes nothing. One `walkTo` covers **7 or 8 tiles**, so a single walk
+aimed at something 11 tiles away lands short, and the pickup that follows is
+dispatched into thin air.
+
+This is ordinary "dispatch is not effect" — except for what it did next. A
+loop that counted the dispatch reported **11% bone collection** at a camp
+where the drops were all reachable, which was then diagnosed, at length, as a
+*structural* property of safespotting: the leash needs distance, distance puts
+the drop a walk away, so the walk is the throughput. A whole method was
+written off and a different camp was planned. The real collection rate, once
+the pickup walked until adjacent and compared the inventory, was **100%**.
+
+**Guard:** loop the walk until the character is within one tile, then pick up,
+then compare a count of that item before and after. Report the ones you failed
+to reach, by name. `hunt.py`'s `pickup()` does this.
+
+### A structural conclusion is only as good as the instrument under it
+
+The entry above is the specific case; this is the general one, and it is the
+most expensive mistake in this file because it does not feel like a mistake.
+A measurement came back bad, the bad number was explained by a real and
+elegant mechanism, and the explanation was believed **because it was true in
+itself** — the leash really does need distance, distance really does cost
+walking. None of that was why the number was bad.
+
+**Guard:** before concluding that a limit is structural, verify the thing
+producing the number. Collect one by hand and compare it against what the loop
+claims. A theory that explains a bug is still a theory about a bug, and the
+better it is, the longer it survives.
+
+### Two parameters that must be tuned against each other mean the loop's unit is wrong
+
+`hunt.py` used to take `--loot-every`, `--alch-every`, `--sweep-every` and
+`--loot-sortie`, and they had to be multiples of one another or a step simply
+never fired. That was not a tuning problem. Its round was **one attack**, and
+a moss giant takes about a dozen, so the loop had no idea when a kill had
+happened and every flag was a guess at it. Each guess had its own silent
+failure: looting between shots to fetch the arrow just fired, alching
+mid-fight with the bow on the ground, a counter that never coincided with
+another counter.
+
+Making the kill explicit — attack, then poll until the target's `hp` reads 0
+and its index leaves `nearbyNpcs` — deleted all four flags and the failures
+with them.
+
+**Guard:** when magic numbers start needing to be multiples of each other,
+stop tuning and ask what the loop's round actually is. The fix is upstream of
+the parameters.
+
 ### Zero movement to a far goal while SHORT hops work is a pocket
 
 The most expensive signature in this project so far, because it looks like
@@ -178,6 +230,27 @@ ranking into whatever file the next session reads.** A priority that changes
 only inside one session's reasoning has not changed, it has been forgotten.
 Silence is how priorities die here, the same way silence is how broken loops
 hide, and the guard is the same: make it explicit, in a file.
+
+### A decision that is not in the ordered plan has not been made
+
+Sibling of the entry above, and it cost three days. A goal was agreed, and it
+was written down — in a long prose memory file, as a paragraph. It never made
+it into the ordered list of steps the next session actually reads. So a later
+session read the list, did not find it, and quietly wrote *"ahead of X"* into
+a reference file, **demoting something nobody had agreed to demote.** Nothing
+was wrong in any report. The owner had to ask where it had gone, twice.
+
+Prose and lists fail differently. Prose records that a thing was decided; a
+list records what to do next. An agent working from the list will never see a
+decision that only exists in the prose, and has no way to know it is missing.
+
+**Guard, and it is two things.** Put the decision in the ordered plan as a
+numbered step **in the same change that makes it**, not afterwards. And keep a
+**journal**: one entry per session, newest first — what moved, what the world
+turned out to be, what was decided *and where it was written*, and the
+specific thing the next session starts on. The plan cannot hold a narrative
+and a chat log cannot be read by the next session, so without the journal the
+only record of *why* is in a transcript nobody will open.
 
 ### Never truncate a search you are about to conclude from
 
