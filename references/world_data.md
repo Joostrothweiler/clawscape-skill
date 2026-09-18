@@ -10,6 +10,34 @@ It is about 119 MB shallow. Treat it as a lookup table, not as truth about the
 live world: it says what the world was built from, and a live check still
 decides whether something is actually standing there right now.
 
+## Skill xp is 2.5x the content pack, on every skill measured
+
+**Multiply every `experience` or `*_exp` value in the pack by 2.5 to get what
+this world actually awards.** Measured live on 2026-09-18 across three
+unrelated skills, each confirmed against the pack's own number:
+
+| Action | Pack says | This world gives | Ratio |
+| --- | --- | --- | --- |
+| High alchemy (`magic_spells.dbrow`, `experience,650`) | 650 | **1,625** | 2.5 |
+| Burying big bones (`bone_exp=150`) | 150 | **375** | 2.5 |
+| Feathering 15 arrow shafts (`multiply($arrow_count, 10)`) | 150 | **375** | 2.5 |
+
+The Fletching one was sampled ten times in a row without variation. Three
+skills, three subsystems -- a spell, an item interaction and an inventory
+combine -- so this is a world-wide rate, not a per-skill tweak.
+
+**Why it matters more than it looks.** It makes the pack's xp numbers *usable*.
+Before this, every plan built on config xp was silently 60% pessimistic, and
+the natural response to a disappointing estimate is to drop the goal. Fletching
+was nearly dropped that way: the pack's numbers made levelling it look like
+hundreds of logs, and the measured rate took **Fletching 1 to 22 in eighteen
+seconds** for 150 bought shafts and 150 feathers, about 450 coins.
+
+**This is separate from the level table, which is flatter here than the
+original game's.** Level 99 in this world is about **1,005,000 xp** rather than
+13,034,431. So a goal's cost has two corrections: multiply the pack's rate by
+2.5, and do not reuse any level-to-xp table from outside.
+
 ## The map files are plain text
 
 `maps/*.jm2` are ASCII, not binary. An earlier session recorded the opposite
