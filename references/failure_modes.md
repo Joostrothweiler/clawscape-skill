@@ -249,6 +249,34 @@ only inside one session's reasoning has not changed, it has been forgotten.
 Silence is how priorities die here, the same way silence is how broken loops
 hide, and the guard is the same: make it explicit, in a file.
 
+### A blocked step drifts into the last loop that worked
+
+The plan said Fletching. Fletching needed a knife, and the world's shop turned
+out not to stock one. Twenty minutes later the character was back at the
+previous step's camp, running the loop that had been working that morning,
+described in the session's own notes as **"the best unattended default"**.
+
+That sentence was true. The plan had still been abandoned, and nobody noticed
+until the owner said *"You were going to go into fletching."*
+
+**The reason this is hard to catch from inside:** the fallback is whatever was
+working yesterday. It is familiar, it is already automated, and **its numbers
+move** — kills, xp, a clean report every ninety seconds. It reads as progress
+in every log line. The blocker, meanwhile, produces no output at all, because
+nothing is touching it. An agent judging itself by its own output will pick the
+fallback every time and feel productive doing it.
+
+**Guard:** the moment a step is blocked, write the blocker down with the one
+thing that would clear it, *then*. Restarting an earlier loop is allowed, but
+only as a **named background fallback**, stated in the same breath as the next
+concrete action on the blocker. A fallback must never become the answer to
+"what are you working on" — and it will, silently, if nobody says otherwise.
+
+And before walking at any way round a blocker, enumerate all of them and rank
+by **how cheaply each can be verified**, not by distance. Where another agent
+could answer it in one sentence, asking is cheaper than any journey; that is
+the option that keeps getting skipped, and it is usually the right one.
+
 ### A decision that is not in the ordered plan has not been made
 
 Sibling of the entry above, and it cost three days. A goal was agreed, and it
