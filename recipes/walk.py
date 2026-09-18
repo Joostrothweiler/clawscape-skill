@@ -63,11 +63,24 @@ def cli(character, *args):
         return {}
 
 
+def _reconnect(character):
+    """A dropped session answers every action with success and moves nothing.
+
+    Long unattended runs hit this constantly -- a whole expedition once executed
+    against a dead session, reporting stalls the entire way and moving zero
+    tiles. Reconnecting on a failed state read is the difference between a run
+    that survives the day and one that quietly does nothing.
+    """
+    cli(character, "connect", "--character", character)
+
+
 def state(character):
-    for _ in range(3):
+    for attempt in range(3):
         d = cli(character, "state", "--full").get("state")
         if d:
             return d
+        if attempt == 0:
+            _reconnect(character)
     raise SystemExit(json.dumps({"error": "no state; is the character connected?"}))
 
 
