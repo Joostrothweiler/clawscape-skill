@@ -83,6 +83,48 @@ with them.
 stop tuning and ask what the loop's round actually is. The fix is upstream of
 the parameters.
 
+### Three navigation tools, three different maps, and using the wrong one costs an hour
+
+This project has `walk.py`, an offline BFS over `mapdata.blocked`, `maze.py`
+and `route.py`. They do not share a map, and the failure that wasted most of
+one session on 2026-09-18 was reaching for them in the wrong order.
+
+| Tool | What it believes | Right when |
+| --- | --- | --- |
+| offline BFS over `mapdata.blocked` | the content pack's terrain and loc data | crossing **unwalked open country** |
+| `route.py` | hops this world has **actually walked** | returning to somewhere you have been |
+| `maze.py` | map data plus tiles it has **learned are blocked** | a field of obstacles it can crawl |
+| short live probes | the server | the last twenty tiles, indoors, anywhere the above disagree |
+
+The expensive case was coming **back** from a guild. Offline BFS answered "no
+route" from a tile the character was standing on, having walked there an hour
+before. `maze.py` crawled four tiles and gave up with `no_path`. `route.py`
+was honest and useful: *"both on the map but not connected by any recorded
+hop"* — which was the actual answer. The character was in a pocket between two
+recorded corridors, inside a building, and no amount of planning was going to
+find the door.
+
+**What worked was one live eight-direction probe at single-tile granularity.**
+Three-tile steps were refused in every direction; one-tile steps opened
+north, south and two diagonals. Then `state locs` showed a `Stool`, a `Range`
+and a `Ladder` within two tiles — she was *indoors*, and the way out was a
+`Door` three tiles away reading option `Open`, meaning shut.
+
+**Guard, in order:**
+
+1. **Indoors or near a shop, probe live first.** One tile, eight directions.
+   If furniture shows up in `state locs`, stop planning and find the door.
+2. **`route.py` before any offline BFS for a return trip.** Its
+   `no_known_route` message names the real problem instead of denying a route
+   you have walked.
+3. **Offline BFS only for open country you have never crossed**, where it is
+   excellent — it found a 116-tile path across a river in seconds the same day
+   after three blind probes had failed.
+4. **A refused three-tile leg is not a wall until a one-tile step is also
+   refused.** Long legs fail where short hops work, and this file has said so
+   for months; it still cost an hour, because the tempting move is to try
+   another *route* rather than a shorter *step*.
+
 ### A shop leaves you indoors, and the next leg is refused with no message
 
 `shop.py` walks to the shopkeeper, and shopkeepers stand **inside buildings**.
