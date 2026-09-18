@@ -26,7 +26,49 @@ own name→id table.
 | Wind strike | **1152** | 1 | 1 Air + 1 Mind | Confirmed live: one cast, 137 Magic XP, exactly 1 of each rune consumed |
 | Confuse | 1153 | 3 | — | id only, untested |
 | Low level alchemy | **1162** | **21** | 1 Nature + 3 Fire | **775 XP, confirmed live** |
+| Varrock teleport | 1164 | 25 | 1 Fire + 3 Air + 1 Law | ids and costs from the content pack, casts untested |
+| Lumbridge teleport | 1167 | 31 | 1 Earth + 3 Air + 1 Law | |
+| Falador teleport | 1170 | 37 | 1 Water + 3 Air + 1 Law | |
+| Camelot teleport | 1174 | 45 | 5 Air + 1 Law | `members=true` |
 | High level alchemy | **1178** | **55** | 1 Nature + 5 Fire | **1625 XP, confirmed live** |
+| Ardougne teleport | 1540 | 51 | 2 Water + 2 Law | `members=true`, and Plague City must be complete |
+| Watchtower teleport | 1541 | 58 | — | `members=true`, Watch Tower must be complete |
+
+## Teleports, and why they are worth more than their alch value
+
+**Never alch a rune.** A law rune high-alchs for a couple of hundred coins and
+is worth far more as a teleport: the map is large, walking it is where whole
+sessions go, and several of the walks pass things that kill a low-Defence
+character. The coins an alch returns do not buy the spell back.
+
+Where each one lands, decoded from the spell table's `tele_coord`
+(`level_mapX_mapZ_localX_localZ`, so `worldX = mapX*64 + localX`):
+
+| Spell | Lands at | Useful because |
+| --- | --- | --- |
+| Varrock | (3213,3424) | 40 tiles from the Varrock bank (3253,3418) |
+| Lumbridge | (3221,3218) | the courtyard, the world's usual respawn |
+| Falador | (2965,3378) | ~50 tiles from the Falador bank (3013,3354) |
+| Camelot | (2757,3478) | ~55 tiles from **Catherby**, bank and archery shop |
+| Ardougne | (2661,3301) | **10 tiles from the `chest_nature_rune` at (2671,3301)**, 42 from the Ardougne east bank (2619,3331) |
+
+Three things the scripts make explicit, all of which change what to carry:
+
+- **A staff supplies its own rune for every spell, not just alchemy.**
+  `staff_runes` nulls the count of whichever rune matches the wielded staff.
+  So with a **staff of fire**, Varrock teleport costs **3 Air + 1 Law** and
+  nothing else — and air runes are the cheapest rune in the game.
+- **Air runes are half of every teleport.** 3 for Varrock, Lumbridge and
+  Falador, 5 for Camelot. Bank them at your peril; they are the consumable
+  that makes the rest usable.
+- **Teleports are blocked above Wilderness level 20**, with
+  "A mysterious force blocks your teleport spell!" — so a teleport is not an
+  escape plan from deep Wilderness.
+
+The `members=true` flag is checked against `map_members` **where the caster
+is standing**, not against the account. This world has members ground that is
+freely reachable (the Ardougne moss giant camp is on it), so a members spell
+cast from members land is worth testing rather than assuming closed.
 
 `spellOnNpc` takes the target's `npcIndex` from `state npcs`, same as
 `interactNpc`. A cast at a target whose state row says `reachable: false`
@@ -50,11 +92,8 @@ gold.
 Teleports are a different matter and this file used to dismiss them. A
 character with a camp and a bank in different towns walks hundreds of tiles
 between them through places that have killed it; one law rune plus air runes
-replaces that walk. So **never alch a rune of any kind**: a law rune is a
-Camelot, Falador or Varrock teleport, an air rune is half of each, and the
-coins an alch returns do not buy the spell back. The teleport
-`spellComponent` ids are not yet recorded here — find them in the content
-pack's name→id table and confirm one cast live before planning around them.
+replaces that walk. So **never alch a rune of any kind**. The ids, costs and
+landing coordinates are in the table above.
 
 **Alchemy is the one that pays**, and its binding input is Nature runes.
 
