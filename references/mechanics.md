@@ -653,3 +653,39 @@ ship?"**, then **"Search away, I have nothing to hide."**, then **"Ok."** to pay
 the 30. Answering blind by always clicking option 1 walks into "Why?" and loops
 back through the explanation, which costs ticks but is recoverable. Landing is
 (3032, 3217), again on the deck.
+
+## A bow can only fire arrows up to its own tier
+
+**Buying better arrows than your bow can fire wastes the money and produces a
+loop that fires nothing.** `player_ranged.rs2` is explicit:
+
+    if (oc_param($ammo, levelrequire) > oc_param($rhand, levelrequire)) {
+        mes("Your bow isn't powerful enough for those arrows.");
+
+So the arrow's `levelrequire` must be **less than or equal to the bow's**, and
+both come from the same field:
+
+| Bow | `levelrequire` | Highest arrow it can fire |
+| --- | --- | --- |
+| Shortbow, Longbow, Crossbow | 1 | **Iron** |
+| Oak shortbow / longbow | 5 | **Steel** |
+| Willow shortbow / longbow | 20 | **Mithril** |
+| Maple shortbow / longbow | 30 | **Adamant** |
+| Yew shortbow / longbow | 40 | **Rune** |
+| Magic shortbow / longbow | 50 | Rune |
+
+Arrow requirements: bronze and iron **1**, steel **5**, mithril **20**,
+adamant **30**, rune **40**. Poisoned and lit variants match their base.
+
+**What it looks like when you get it wrong**, because it is not obvious: the
+attack dispatches successfully, the character stands in range, and **nothing
+happens**. No damage, no xp, no arrow consumed. The only trace is
+`"Your bow isn't powerful enough for those arrows."` in `state messages` —
+the same silent-success shape as the empty quiver and the un-wielded staff.
+
+Measured on 2026-09-18: 130 mithril arrows were bought for **6,762 coins** for
+a character holding an **Oak longbow**, which is tier 5 against mithril's 20.
+Every fight was abandoned by the loop's own stall guard within two minutes.
+Check the bow's tier **before** buying ammunition, and note that the useful
+upgrade is often the bow, not the arrow — a Willow longbow at 320 gp unlocked
+arrows already paid for.
