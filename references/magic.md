@@ -41,11 +41,20 @@ A Wind Strike cast costs 7 gp in runes (Mind 3 + Air 4 at Aubury's, see
 capital, and a plan that trains it without an income attached runs out.
 
 Outside guides for the modern game suggest three F2P answers: splashing,
-teleport training, and alchemy. Only alchemy is worth pursuing here, and only
-after level 21 — there is no Grand Exchange to arbitrage, teleport spells are
-of no use to a character with nowhere to go yet, and splashing is an
-XP-per-hour optimisation for players paying with time rather than gold, which
-is backwards for an agent that pays with gold.
+teleport training, and alchemy. Only alchemy is worth pursuing here as
+*training*, and only after level 21 — there is no Grand Exchange to
+arbitrage, and splashing is an XP-per-hour optimisation for players paying
+with time rather than gold, which is backwards for an agent that pays with
+gold.
+
+Teleports are a different matter and this file used to dismiss them. A
+character with a camp and a bank in different towns walks hundreds of tiles
+between them through places that have killed it; one law rune plus air runes
+replaces that walk. So **never alch a rune of any kind**: a law rune is a
+Camelot, Falador or Varrock teleport, an air rune is half of each, and the
+coins an alch returns do not buy the spell back. The teleport
+`spellComponent` ids are not yet recorded here — find them in the content
+pack's name→id table and confirm one cast live before planning around them.
 
 **Alchemy is the one that pays**, and its binding input is Nature runes.
 

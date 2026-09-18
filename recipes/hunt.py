@@ -12,13 +12,39 @@ not for the combat xp but for roughly 53 gp of alchable items per kill plus the
 nature runes that fuel the alching -- see `references/alchemy.md`. A kill whose
 drop is left on the ground is a wasted kill, and ground items despawn.
 
-So this loop is: find the target, attack it, eat when health drops, sweep the
-ground for anything worth taking, repeat. It stops when food runs out rather
-than when health does, because a character that keeps fighting without food is
-a character about to make a donation to the respawn point.
+So the loop is one kill at a time:
+
+    pick a target -> attack -> hold the tile until it is dead
+        -> loot once (bones, arrows, valuables) -> bury -> alch -> repeat
+
+That order is the whole design. An earlier version's round was one ATTACK,
+and a moss giant takes about a dozen, so it never knew where the kill was and
+grew a cadence flag for everything that had to happen after one: loot every N
+rounds, alch every M, a sortie every so often. Every one of those was a guess
+about where the kill was, and each guess produced its own silent failure --
+looting mid-fight, alching mid-fight with the bow still on the ground, a
+counter that never lined up with another counter. Making the kill explicit
+removes the flags and the failures with them.
+
+Two facts from the live measurement that the structure rests on, both from
+the Ardougne moss giant camp on 2026-09-18:
+
+  - **One `interactNpc` runs the whole fight.** Twelve hits landed over 36
+    seconds from a single dispatch. So the fight loop attacks once and then
+    only polls, re-attacking when the player's own combat block says the
+    engagement dropped.
+  - **The attack walks the character in, and the giant walks the rest.** One
+    dispatch moved her four tiles off a safespot that costs nothing when
+    held; HP went 99 to 65 in one kill. So the fight loop checks the tile on
+    every poll and corrects a drift before anything else.
+
+Measured over five kills with the tile held: 7.5 minutes, +30,400 Ranged xp,
+4 of 5 big bones buried, HP 96 to 96, zero food eaten, arrows net positive.
 
     python3 recipes/hunt.py --character arete --npc "Moss giant" \
-        --take "Nature rune" --take "Black sq shield" --take Coins --rounds 200
+        --safespot 2546,3400 --target 2549,3408 --target 2554,3401 \
+        --target 2554,3409 --weapon-range 10 --safe-pickup 12 \
+        --min-hp 60 --food Salmon --kills 50
 
 `--take` is repeatable and matches by name. Give it the things worth carrying;
 everything else is left where it falls, because inventory space is the real
@@ -163,10 +189,13 @@ def sweep(character, takes, limit=6, within=None, origin=None):
         return 0
     # Rank before truncating. `scanGroundItems` returns whatever order it
     # likes and `limit` throws away the tail, so a scatter of arrows could
-    # crowd out the drop that was worth the walk. Arrows first because they are
-    # the ammunition and the hunt stops without them, then bones because they
-    # are the Prayer, then the rest by value. Ties break on distance so the
-    # cheap nearby pickups still happen on the way.
+    # crowd out the drop that was worth the walk. Bones first: a kill leaves
+    # ONE big bone and about a dozen arrow piles, and with arrows ranked
+    # ahead the cap cut the bone off on the second kill of the 2026-09-18
+    # trial. A bone is 375 Prayer xp; an arrow pile is a few gp and most of
+    # them get collected anyway. Then ammunition, then the rest by value.
+    # Ties break on distance so the cheap nearby pickups still happen on
+    # the way.
     AMMO = ("arrow", "bolt", "dart")
     BONES = ("bones",)
     VALUABLE = (
@@ -189,9 +218,9 @@ def sweep(character, takes, limit=6, within=None, origin=None):
 
     def rank(it):
         n = (it.get("name") or "").lower()
-        if any(k in n for k in AMMO):
+        if any(k in n for k in BONES):
             tier = 0
-        elif any(k in n for k in BONES):
+        elif any(k in n for k in AMMO):
             tier = 1
         elif any(k in n for k in VALUABLE):
             tier = 2
@@ -230,38 +259,61 @@ def sweep(character, takes, limit=6, within=None, origin=None):
                 > within
             ):
                 continue
-        # Walk to it first. Drops land at the TARGET's feet, not yours, and
-        # `pickupItem` on something out of reach just answers "I can't reach
-        # that!". Arrows especially: every shot is an arrow on the ground by
-        # the corpse, and a ranged hunt that does not collect them runs out.
-        walk.cli(
-            character,
-            "act",
-            "walkTo",
-            "--json",
-            json.dumps({"x": item.get("x"), "z": item.get("z"), "running": True}),
-        )
-        walk.cli(character, "wait", "3")
-        walk.cli(
-            character,
-            "act",
-            "pickupItem",
-            "--json",
-            json.dumps(
-                {
-                    "x": item.get("x"),
-                    "z": item.get("z"),
-                    "itemId": item.get("id"),
-                }
-            ),
-        )
-        walk.cli(character, "wait", "2")
-        took += 1
+        if pickup(character, item):
+            took += 1
+        else:
+            skipped.append((name, "not reached"))
     # Only worth saying when it went wrong: something on the ground that was
     # wanted and still not taken. A quiet sweep needs no commentary.
     if skipped or (seen and not took):
         emit(sweep_saw=len(seen), sweep_took=took, sweep_skipped=skipped[:6])
     return took
+
+
+def stack_of(d, name):
+    return sum(
+        i.get("amount") or i.get("count") or 1
+        for i in (d.get("inventory") or [])
+        if i.get("name") == name
+    )
+
+
+def pickup(character, item, walks=3):
+    """Walk until adjacent, pick up, and COUNT the item rather than the call.
+
+    Drops land at the TARGET's feet, not yours, and `pickupItem` on something
+    out of reach answers "I can't reach that!" with `success: true`. One
+    `walkTo` covers 7 or 8 tiles, so a drop at 11 -- where a moss giant's big
+    bones landed on 2026-09-18, inside the pickup radius -- was walked at once,
+    not reached, and then counted as taken. Two of five bones went missing
+    that way in one sample and the report said nothing. Now the walk repeats
+    until the character is beside the drop, and the pickup is believed only
+    when the inventory says so.
+    """
+    x, z, name = item.get("x"), item.get("z"), item.get("name")
+    before = stack_of(walk.state(character) or {}, name)
+    for _ in range(walks):
+        d = walk.state(character) or {}
+        p = d.get("player") or {}
+        if max(abs(p.get("worldX", 0) - x), abs(p.get("worldZ", 0) - z)) <= 1:
+            break
+        walk.cli(
+            character,
+            "act",
+            "walkTo",
+            "--json",
+            json.dumps({"x": x, "z": z, "running": True}),
+        )
+        walk.cli(character, "wait", "4")
+    walk.cli(
+        character,
+        "act",
+        "pickupItem",
+        "--json",
+        json.dumps({"x": x, "z": z, "itemId": item.get("id")}),
+    )
+    walk.cli(character, "wait", "2")
+    return stack_of(walk.state(character) or {}, name) > before
 
 
 def last_game_message(d):
@@ -320,7 +372,10 @@ ALCH_SKIP = (
     "bolt",
     "dart",
     "coins",
-    "nature rune",
+    # Never a rune, of any kind. The owner's rule (2026-09-18): runes are for
+    # casting, and the coins an alch returns do not buy them back. A chaos
+    # rune high-alched for 9 coins the one time this list let it through.
+    "rune",
     "salmon",
     "lobster",
     "trout",
@@ -443,120 +498,203 @@ def hold_safespot(character, safespot, tries=6):
     return tuple(walk.settled(character)[0]) == safespot
 
 
+def find_target(d, npc, pins, radius, weapon_range, safespot, idx=None):
+    """The giant to shoot, or the one already being shot if `idx` is given.
+
+    With `idx` this answers "is that exact creature still here and alive";
+    without it, it picks a fresh one the same way the old loop did: matched
+    by name, standing within `radius` of a pinned spawn, and within weapon
+    range OF THE SAFESPOT rather than of wherever the character has drifted.
+    """
+    for n in d.get("nearbyNpcs") or []:
+        if idx is not None:
+            if n.get("index") != idx:
+                continue
+            if n.get("hp") is not None and n.get("hp", 1) <= 0:
+                return None
+            return n
+        if (npc or "").lower() not in (n.get("name") or "").lower():
+            continue
+        if (n.get("hp") is not None) and n.get("hp", 1) <= 0:
+            continue
+        if pins and not any(
+            max(abs(n.get("x", 0) - p[0]), abs(n.get("z", 0) - p[1])) <= radius
+            for p in pins
+        ):
+            continue
+        if weapon_range:
+            origin = safespot or (
+                (d.get("player") or {}).get("worldX"),
+                (d.get("player") or {}).get("worldZ"),
+            )
+            if (
+                max(abs(n.get("x", 0) - origin[0]), abs(n.get("z", 0) - origin[1]))
+                > weapon_range
+            ):
+                continue
+        return n
+    return None
+
+
+def skill_xp(d, name):
+    for s in d.get("skills") or []:
+        if s.get("name") == name:
+            return s.get("experience", 0)
+    return 0
+
+
+def edible(d, food):
+    return [i for i in d.get("inventory") or [] if i["name"] == food] or [
+        i
+        for i in d.get("inventory") or []
+        if any((o.get("text") or "") == "Eat" for o in i.get("optionsWithIndex") or [])
+    ]
+
+
+def attack(character, target, option):
+    r = walk.cli(
+        character,
+        "act",
+        "interactNpc",
+        "--json",
+        json.dumps(
+            {
+                "npcIndex": target.get("index"),
+                "optionIndex": option_index(target, option),
+            }
+        ),
+    )
+    # One tick, not several: the dispatch starts the character walking at the
+    # target, and every tick before the fight loop pulls her back is a tick
+    # inside the leash. Sample two on 2026-09-18 cost 18 HP over five kills
+    # with a three-tick gap here.
+    walk.cli(character, "wait", "1")
+    return r
+
+
+def fight(a, d, target, safespot, t_start):
+    """Shoot one creature until it is dead, holding the tile the whole time.
+
+    Measured on 2026-09-18 at the Ardougne camp: ONE `interactNpc` runs the
+    whole fight. Twelve hits landed over 36 seconds from a single dispatch,
+    +6,000 Ranged xp, and the giant died. So the loop here does not attack per
+    round; it attacks once, then polls, and only re-attacks when the player's
+    own combat block says the engagement dropped.
+
+    What the same measurement also showed: the attack walked the character
+    four tiles toward the target, and the giant walked the rest. HP 99 to 65
+    in one kill from a tile that costs nothing when held. So every poll checks
+    the tile first, and a drift is corrected before anything else.
+
+    Death is unambiguous in the state: the target's `hp` reads 0, then its
+    index is gone from `nearbyNpcs` on the next poll. Returns
+    (killed, reason, d).
+    """
+    idx = target.get("index")
+    x0 = skill_xp(d, a.xp_skill)
+    last_xp, last_move = x0, time.time()
+    shots = 0
+    while True:
+        p = d.get("player") or {}
+        pos = (p.get("worldX"), p.get("worldZ"))
+        # Death is a teleport: far from the start with full health.
+        if abs(pos[0] - t_start[0]) + abs(pos[1] - t_start[1]) > 60:
+            return False, "died and respawned", d
+        if eat(a.character, d, a.min_hp, a.food):
+            d = state(a.character) or d
+        elif p.get("hp", 99) < a.min_hp and not edible(d, a.food):
+            return False, "hurt with no food", d
+        if safespot and pos != safespot:
+            hold_safespot(a.character, safespot, tries=3)
+            d = state(a.character) or d
+            p = d.get("player") or {}
+        tgt = find_target(d, a.npc, None, 0, 0, None, idx=idx)
+        if tgt is None:
+            return True, "killed", d
+        if tgt.get("hp") == 0:
+            walk.cli(a.character, "wait", "2")
+            return True, "killed", state(a.character) or d
+        c = p.get("combat") or {}
+        if not c.get("inCombat") or c.get("targetIndex") != idx:
+            if shots >= a.max_shots:
+                return False, "target would not engage", d
+            attack(a.character, tgt, a.option)
+            shots += 1
+        else:
+            walk.cli(a.character, "wait", "3")
+        d = state(a.character) or d
+        xp_now = skill_xp(d, a.xp_skill)
+        if xp_now != last_xp:
+            last_xp, last_move = xp_now, time.time()
+        elif time.time() - last_move > a.stall_seconds:
+            return False, "no xp for %ds" % a.stall_seconds, d
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--character", required=True)
     ap.add_argument("--npc", required=True, help="name, matched case-insensitively")
     ap.add_argument("--option", default="Attack")
     ap.add_argument("--take", action="append", default=[])
-    ap.add_argument("--rounds", type=int, default=200)
+    ap.add_argument("--kills", type=int, default=100, help="stop after this many")
     ap.add_argument("--min-hp", type=int, default=45)
     ap.add_argument("--food", default="Lobster")
-    ap.add_argument("--report-every", type=int, default=10)
     ap.add_argument(
         "--safespot",
         default=None,
-        help="x,z to return to after every attack; the tile the target cannot reach",
+        help="x,z to hold for the whole fight; the tile the target cannot reach",
     )
     ap.add_argument(
         "--target",
         action="append",
         default=None,
-        help="x,z of a SPAWN TILE to attack; required for safespotting. "
-        "Repeatable: one stand tile often sits inside weapon range of several "
-        "spawns while still outside every leash, and pinning only one leaves "
-        "the loop idle through the other respawns. At the Ardougne moss giant "
-        "camp, 24 of 38 rounds read 'no target in range' against one spawn, "
-        "and (2546,3400) covers three at 8, 8 and 9 tiles.",
+        help="x,z of a SPAWN TILE to attack. Repeatable: (2546,3400) at the "
+        "Ardougne moss giant camp covers three spawns at 8, 8 and 9 tiles.",
     )
     ap.add_argument(
         "--target-radius",
         type=int,
         default=5,
-        help=(
-            "how far from --target the pinned spawn may have wandered. An npc's "
-            "`wanderrange` means it is almost never standing on its own spawn "
-            "tile, so an exact match pins nothing; default is a moss giant's "
-            "maxrange of 5"
-        ),
+        help="how far from --target the pinned spawn may have wandered; "
+        "default is a moss giant's maxrange of 5",
     )
     ap.add_argument(
         "--weapon-range",
         type=int,
         default=0,
-        help=(
-            "skip attacks on targets further than this, in tiles. Attacking "
-            "something out of range makes the character WALK to it, which is "
-            "exactly how a safespot is lost; the obj param is 10 for a longbow "
-            "and 7 for a shortbow. 0 disables the check"
-        ),
-    )
-    ap.add_argument(
-        "--sweep-every",
-        type=int,
-        default=0,
-        help="every N rounds, walk the kill site and collect properly rather "
-        "than only what landed within --safe-pickup. Needed because the target "
-        "wanders before it dies, so the drop is usually outside that radius, "
-        "and on a multi-spawn tile the loop never goes idle long enough for "
-        "the unbounded sweep to run. Without it, 42 kills produced 5 bones. "
-        "DEFAULT 0, because measured end to end it costs more than it wins: "
-        "`sweep` walks to each drop individually, so a kill-site pass every "
-        "other round slowed the loop until almost nothing happened. Over ten "
-        "minutes at --sweep-every 2 the character gained 2,200 Ranged xp and "
-        "buried ZERO bones; the same camp at 0 gained 6,700 xp and buried two "
-        "bones in under two minutes. The per-round bounded sweep already "
-        "collects the corpse most of the time, because attacking pulls the "
-        "character toward the target often enough to bring the drop inside "
-        "--safe-pickup. Turn this on only for a camp where the drop really "
-        "does land out of reach, and measure it.",
-    )
-    ap.add_argument(
-        "--loot-sortie",
-        type=int,
-        default=1,
-        help="on a loot round, step out to the pinned spawns to scan from "
-        "there before returning. scanGroundItems reaches only about 13 tiles "
-        "and is centred on the character, so a corpse 14 or 16 tiles from the "
-        "safespot is invisible from it and its drops are never collected. "
-        "0 disables the sortie.",
-    )
-    ap.add_argument(
-        "--loot-every",
-        type=int,
-        default=6,
-        help="sweep for loot every N rounds. A round is one ATTACK, not one "
-        "kill, and a moss giant takes about a dozen, so 1 means breaking off "
-        "after every shot to fetch the arrow just fired.",
-    )
-    ap.add_argument(
-        "--alch-every",
-        type=int,
-        default=40,
-        help="every N rounds, high-alch the valuables carried. Turns the "
-        "camp's drops into Magic xp and coins rather than a bank trip. "
-        "0 disables it.",
-    )
-    ap.add_argument(
-        "--alch-keep",
-        type=int,
-        default=10,
-        help="never alch below this many nature runes",
+        help="skip targets further than this from the safespot; 10 for a "
+        "longbow, 7 for a shortbow. 0 disables the check",
     )
     ap.add_argument(
         "--safe-pickup",
         type=int,
-        default=3,
-        help="how far from the safespot the per-round sweep will step for a "
-        "drop. Kept small on purpose: the loot lands at the corpse, which is "
-        "inside the leash, and the point of the tile is not to go there. The "
-        "unbounded sweep still runs while waiting for a respawn.",
+        default=12,
+        help="how far from the safespot the after-kill sweep will step for a "
+        "drop. The corpse lands where the target stood, which at this camp is "
+        "4 to 10 tiles out; measured 2026-09-17, 10 collected the corpse most "
+        "kills and 16 quartered the kill rate",
     )
     ap.add_argument(
-        "--kite",
+        "--alch",
+        action="store_true",
+        help="high-alch the valuables between kills. Off by default because "
+        "the bow-restore after a staff swap failed once and left the "
+        "character meleeing giants at Defence 1; the loop now STOPS if the "
+        "weapon is not a bow afterwards, but turn it on only while watching",
+    )
+    ap.add_argument("--alch-keep", type=int, default=10)
+    ap.add_argument(
+        "--xp-skill",
+        default="Ranged",
+        help="the skill a fight must keep moving; a fight that stops moving it "
+        "for --stall-seconds is abandoned and a target re-picked",
+    )
+    ap.add_argument("--stall-seconds", type=int, default=45)
+    ap.add_argument(
+        "--max-shots",
         type=int,
-        default=0,
-        help="tiles to back away from the target after each attack",
+        default=6,
+        help="attack dispatches per fight before giving up on that target",
     )
     a = ap.parse_args(argv)
 
@@ -570,40 +708,32 @@ def main(argv):
     d = state(a.character)
     if not d:
         raise SystemExit(json.dumps({"error": "no state"}))
-    # Whether ammunition matters at all. A scimitar has no arrows and never
-    # will, so the out-of-ammo stop below must not fire for a melee camp.
-    #
-    # Read the WEAPON, not the quiver. The first version of this checked
-    # whether ammunition was equipped at start, and a run that began with an
-    # empty quiver and 56 arrows in the pack therefore decided it was a melee
-    # camp: rewield_ammo never ran, the out-of-ammo stop was gated off the same
-    # flag, and the loop fired nothing for five minutes while reporting nothing
-    # wrong. The guard against the silent stop produced the silent stop.
-    weapon = next(
-        (
-            (e.get("name") or "").lower()
-            for e in (d.get("equipment") or [])
-            if e.get("slot") == 3
-        ),
-        "",
-    )
-    ranged_camp = any(w in weapon for w in ("bow", "crossbow", "sling", "dart"))
+
+    # Read the WEAPON, not the quiver: a run that began with an empty quiver
+    # and 56 arrows in the pack once decided it was a melee camp and fired
+    # nothing for five minutes.
+    def weapon_name(d):
+        return next(
+            (
+                (e.get("name") or "").lower()
+                for e in (d.get("equipment") or [])
+                if e.get("slot") == 3
+            ),
+            "",
+        )
+
+    ranged_camp = any(w in weapon_name(d) for w in ("bow", "crossbow", "sling", "dart"))
     start = counts(d)
+    xp0 = {s["name"]: s.get("experience", 0) for s in d.get("skills") or []}
     t0 = time.time()
-    killed = 0
-    alched = 0
-    kills = 0
-    taken = 0
-    buried = 0
+    kills = fights = taken = buried = alched = 0
 
     p = d.get("player") or {}
     hp, maxhp = p.get("hp", 0), p.get("maxHp", 0) or 1
     here0 = (p.get("worldX"), p.get("worldZ"))
 
-    # Never open a fight already hurt. A character that starts below its own
-    # heal threshold is a character that dies before the first eat. Measured
-    # the hard way: sent in at 52/94 against level 42 giants with Defence 1,
-    # dead before the hunt loop even started -- its first log line read hp 0.
+    # Never open a fight already hurt: sent in at 52/94 against level 42
+    # giants at Defence 1, dead before the first log line.
     if hp < max(a.min_hp, int(0.8 * maxhp)):
         emit(topping_up=True, hp=hp, of=maxhp)
         for _ in range(12):
@@ -618,248 +748,107 @@ def main(argv):
             emit(hunt="refused", reason="too hurt to start", hp=hp, of=maxhp)
             return 1
 
-    emit(hunt="start", npc=a.npc, take=takes, hp=hp, of=maxhp)
+    emit(hunt="start", npc=a.npc, take=takes, hp=hp, of=maxhp, alch=a.alch)
 
-    for r in range(1, a.rounds + 1):
-        d = state(a.character)
-        if not d:
-            emit(hunt="stopped", reason="lost the session")
-            break
-
-        # Death is a teleport, not an error message. The only reliable sign is
-        # that the character is suddenly somewhere else with full health, so a
-        # loop that does not check position keeps swinging at an empty field
-        # hundreds of tiles from where it died -- 44 rounds of "no target in
-        # range" before anybody noticed.
-        pp = d.get("player") or {}
-        moved = abs(pp.get("worldX", 0) - here0[0]) + abs(
-            pp.get("worldZ", 0) - here0[1]
-        )
-        if moved > 60:
-            emit(
-                hunt="stopped",
-                reason="died and respawned",
-                at=[pp.get("worldX"), pp.get("worldZ")],
-                round=r,
-            )
-            break
-
-        # Food is the budget. Out of food is out of hunt, not a reason to
-        # keep swinging and find out what happens.
-        # Match the named food first, then anything else edible. Stopping with
-        # a pack full of lobster because --food said Salmon is a silly way to
-        # end a run, and it happened.
-        edible = [i for i in d.get("inventory") or [] if i["name"] == a.food] or [
-            i
-            for i in d.get("inventory") or []
-            if any(
-                (o.get("text") or "") == "Eat" for o in i.get("optionsWithIndex") or []
-            )
-        ]
-        if not edible:
-            emit(hunt="stopped", reason="out of food", round=r)
-            break
-        if eat(a.character, d, a.min_hp, a.food):
-            d = state(a.character) or d
-
-        target = None
-        for n in d.get("nearbyNpcs") or []:
-            if (a.npc or "").lower() not in (n.get("name") or "").lower():
-                continue
-            if (n.get("hp") is not None) and n.get("hp", 1) <= 0:
-                continue
-            # A safespot works against ONE spawn, not against the species. The
-            # first safespot test failed for exactly this reason: the loop
-            # attacked the nearest giant, seven tiles off at the edge of bow
-            # range, so the character walked in to close -- and the tile chosen
-            # to be unreachable by a different giant became irrelevant.
-            if pins:
-                # Match the SPAWN, not the tile it happens to be standing on.
-                # A moss giant wanders 3 tiles, so an exact comparison pins
-                # nothing and the loop silently falls through to "no target".
-                if not any(
-                    max(abs(n.get("x", 0) - p[0]), abs(n.get("z", 0) - p[1]))
-                    <= a.target_radius
-                    for p in pins
-                ):
-                    continue
-            if a.weapon_range:
-                # Measure from the SAFESPOT, not from where the character is
-                # standing right now. Measuring from the live position makes
-                # this a ratchet: one drift puts her closer to the camp, which
-                # brings more giants inside range of the new spot, which pulls
-                # her further in. Measured at Ardougne, it walked her 14 tiles
-                # off her tile with a giant at distance 1. The safespot is the
-                # tile she is going to shoot from, so it is the one that
-                # decides what is in range.
-                origin = safespot or (
-                    (d.get("player") or {}).get("worldX"),
-                    (d.get("player") or {}).get("worldZ"),
-                )
-                if (
-                    max(abs(n.get("x", 0) - origin[0]), abs(n.get("z", 0) - origin[1]))
-                    > a.weapon_range
-                ):
-                    continue
-            target = n
-            break
-        if ranged_camp and not rewield_ammo(a.character, d):
-            # No ammunition equipped and none in the pack. Every further attack
-            # will answer success and fire nothing, which is the same silent
-            # stop the quiver bug produced, one level up: there the arrows were
-            # in the inventory, here there are none at all. Stop and say so
-            # rather than grinding rounds into an empty bow.
-            emit(
-                done=True,
-                reason="out of ammunition",
-                rounds=r,
-                engaged=kills,
-                message=last_game_message(state(a.character) or {}),
-            )
-            break
-        d = state(a.character) or d
-
-        if target is None:
-            # Nothing alive in range, so this is the safe window: collect the
-            # drops now, then get back on the tile before the respawn.
-            taken += sweep(a.character, takes)
-            buried += bury_bones(a.character, state(a.character) or {})
-            hold_safespot(a.character, safespot, tries=4)
-            emit(round=r, note="no target in range", taken=taken)
-            walk.cli(a.character, "wait", "5")
-            continue
-
-        walk.cli(
-            a.character,
-            "act",
-            "interactNpc",
-            "--json",
-            json.dumps(
-                {
-                    "npcIndex": target.get("index"),
-                    "optionIndex": option_index(target, a.option),
-                }
-            ),
-        )
-        walk.cli(a.character, "wait", "8")
-
-        # Attacking does NOT normally move you: `player_combat.rs2` fires from
-        # where you stand whenever the target is inside the weapon's
-        # `attackrange`. Measured on 2026-09-16, every attack issued with a
-        # clear line of sight at 3 to 10 tiles moved the character zero tiles.
-        #
-        # But it is not every attack. Roughly one in six still walked her in
-        # with a clear line -- most likely the target moving between the state
-        # read and the dispatch, so the engine saw a blocked line. That is
-        # cheap to correct and expensive to ignore, so re-assert the tile after
-        # every attack. Against a leashed monster, stepping back outside its
-        # `maxrange` breaks contact for good rather than merely postponing it.
-        kills += 1
-
-        # ORDER MATTERS, and getting it wrong has cost something every time.
-        #
-        # 1. Get back on the tile. ALWAYS, every round, before anything else.
-        #    This used to sit behind a `continue` that skipped it on non-loot
-        #    rounds, so across a twelve-attack fight the character drifted into
-        #    melee and was still being hit while the loop reported nothing
-        #    wrong.
-        # 2. Loot on a CADENCE, not every round and not on a detected kill. A
-        #    round is one attack and a giant takes about a dozen, so looting
-        #    every round means breaking off after each shot to fetch the arrow
-        #    just fired. Detecting the kill instead sounds right and is
-        #    fragile: the loop re-acquires a target every round, so "is the
-        #    thing I attacked still alive" answered yes forever in one version
-        #    and almost never in the next. A counter cannot be wrong about
-        #    itself.
-        if safespot:
-            at_now, _ = walk.settled(a.character)
-            if tuple(at_now) != safespot:
-                hold_safespot(a.character, safespot, tries=4)
-
-        if r % a.loot_every:
-            continue
-        killed += 1
-
-        # Arrows first (they are the ammunition and they are free to carry),
-        # then bones (Prayer), then the rest by value. `sweep` ranks them.
-        origin = safespot
-        if origin is None:
-            pl = (state(a.character) or {}).get("player") or {}
-            if pl.get("worldX") is not None:
-                origin = (pl["worldX"], pl["worldZ"])
-        taken += sweep(
-            a.character, takes, limit=10, within=a.safe_pickup, origin=origin
-        )
-        # `scanGroundItems` is centred on the character and reaches about 13
-        # tiles. The corpse is often further: the spawn sits 8 or 9 tiles from
-        # a safespot and the target wanders up to `wanderrange` before dying,
-        # so a drop at 14 or 16 is simply INVISIBLE from the tile and can never
-        # be collected. Watching the ground continuously is what showed it -
-        # every sample capped at distance 13 while coins and bones sat on
-        # screen further out.
-        #
-        # So step out to the spawns once a loot round, scan from there, and
-        # come straight back. One short sortie per six attacks, not per shot.
-        if pins and a.loot_sortie:
-            cx = sum(q[0] for q in pins) // len(pins)
-            cz = sum(q[1] for q in pins) // len(pins)
-            walk.cli(
-                a.character,
-                "act",
-                "walkTo",
-                "--json",
-                json.dumps({"x": cx, "z": cz, "running": True}),
-            )
-            walk.cli(a.character, "wait", "6")
-            taken += sweep(a.character, takes, limit=10)
-            if safespot:
-                hold_safespot(a.character, safespot, tries=4)
-        buried += bury_bones(a.character, state(a.character) or {})
-        if safespot:
-            hold_safespot(a.character, safespot, tries=4)
-        atlas.observe(state(a.character))
-
-        # Turn the valuables into Magic xp and coins rather than carrying them
-        # home. Batched, because each batch swaps the bow out for the staff and
-        # back, and that is only worth doing occasionally.
-        if a.alch_every and r % a.alch_every == 0:
-            alched += alch_valuables(a.character, a.alch_keep)
-
-        if r % a.report_every == 0:
-            d = state(a.character) or d
-            now = counts(d)
-            gained = {
-                k: now.get(k, 0) - start.get(k, 0)
-                for k in set(now) | set(start)
-                if now.get(k, 0) - start.get(k, 0) > 0
-            }
-            emit(
-                round=r,
-                attacks=kills,
-                killed=killed,
-                picked_up=taken,
-                bones_buried=buried,
-                hp=(d.get("player") or {}).get("hp"),
-                food=now.get(a.food, 0),
-                free_slots=28 - len(d.get("inventory") or []),
-                gained=gained,
-                minutes=round((time.time() - t0) / 60, 1),
-            )
-
-    d = state(a.character) or {}
-    now = counts(d)
-    emit(
-        hunt="done",
-        engaged=kills,
-        picked_up=taken,
-        bones_buried=buried,
-        minutes=round((time.time() - t0) / 60, 1),
-        gained={
+    def report(d, **extra):
+        now = counts(d)
+        gained = {
             k: now.get(k, 0) - start.get(k, 0)
             for k in set(now) | set(start)
             if now.get(k, 0) - start.get(k, 0) > 0
-        },
-    )
+        }
+        xp = {
+            s["name"]: s.get("experience", 0) - xp0.get(s["name"], 0)
+            for s in d.get("skills") or []
+            if s.get("experience", 0) - xp0.get(s["name"], 0) > 0
+        }
+        emit(
+            kills=kills,
+            fights=fights,
+            picked_up=taken,
+            bones_buried=buried,
+            alched=alched,
+            hp=(d.get("player") or {}).get("hp"),
+            food=len(edible(d, a.food)),
+            free_slots=28 - len(d.get("inventory") or []),
+            xp=xp,
+            gained=gained,
+            minutes=round((time.time() - t0) / 60, 1),
+            **extra,
+        )
+
+    reason = "kill cap"
+    idle = 0
+    while kills < a.kills:
+        d = state(a.character)
+        if not d:
+            reason = "lost the session"
+            break
+        if not edible(d, a.food):
+            reason = "out of food"
+            break
+        if ranged_camp and not rewield_ammo(a.character, d):
+            reason = "out of ammunition"
+            break
+        d = state(a.character) or d
+        if safespot and not hold_safespot(a.character, safespot, tries=4):
+            emit(warn="not on the safespot", at=(walk.settled(a.character)[0]))
+            d = state(a.character) or d
+
+        target = find_target(d, a.npc, pins, a.target_radius, a.weapon_range, safespot)
+        if target is None:
+            idle += 1
+            if idle % 6 == 0:
+                emit(note="no target in range", idle_polls=idle)
+            walk.cli(a.character, "wait", "5")
+            continue
+        idle = 0
+
+        # 1. Attack, and stay on the tile until it is dead.
+        fights += 1
+        attack(a.character, target, a.option)
+        killed, why, d = fight(a, state(a.character) or d, target, safespot, here0)
+        if why == "died and respawned":
+            reason = why
+            break
+        if why == "hurt with no food":
+            reason = why
+            break
+        if not killed:
+            emit(fight="abandoned", reason=why, target=target.get("index"))
+            continue
+        kills += 1
+
+        # 2. Loot, once, now that nothing alive is on the tile. Arrows first,
+        #    then bones, then the rest by value; `sweep` ranks them.
+        origin = safespot or (
+            (d.get("player") or {}).get("worldX"),
+            (d.get("player") or {}).get("worldZ"),
+        )
+        taken += sweep(
+            a.character, takes, limit=10, within=a.safe_pickup, origin=origin
+        )
+        # 3. Bury, then get back on the tile before the respawn.
+        buried += bury_bones(a.character, state(a.character) or {})
+        if safespot:
+            hold_safespot(a.character, safespot, tries=4)
+        d = state(a.character) or d
+        atlas.observe(d)
+
+        # 4. Alch between kills, standing safe with nothing to shoot. Then
+        #    CHECK the weapon, and stop rather than fight with a staff.
+        if a.alch:
+            alched += alch_valuables(a.character, a.alch_keep)
+            d = state(a.character) or d
+            if ranged_camp and "bow" not in weapon_name(d):
+                reason = "weapon not restored after alching"
+                emit(hunt="stopped", reason=reason, weapon=weapon_name(d))
+                break
+
+        report(d, fight_shots=None)
+
+    d = state(a.character) or {}
+    report(d, hunt="done", reason=reason)
     return 0
 
 
